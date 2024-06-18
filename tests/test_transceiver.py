@@ -2,97 +2,76 @@ import unittest
 import queue
 import sys
 sys.path.append('../protocol')
-from network_classes import Transceiver
+from network_classes import Transceiver, SharedQueueList
 
 class TestTransceiver(unittest.TestCase):
 
     def setUp(self):
+
+        self.channels = SharedQueueList()
         # nodeid=1
-        self.transceiver1 = Transceiver()
+        self.transceiver1 = Transceiver(1, self.channels)
         # nodeid=2
-        self.transceiver2 = Transceiver()
+        self.transceiver2 = Transceiver(2, self.channels)
 
-        q1 = queue.Queue() # 1 to 2
-        q2 = queue.Queue() # 2 to 1
+        self.q1 = queue.Queue() # for node 1
+        self.q2 = queue.Queue() # for node 2
 
-        self.transceiver1.set_outgoing_channel(2, q1)
-        self.transceiver1.set_incoming_channel(2, q2)
-
-        self.transceiver2.set_outgoing_channel(1, q2)
-        self.transceiver2.set_incoming_channel(1, q1)
-
-    def testSetMethods(self):
-        out_len = len(self.transceiver1.outgoing_channels)
-        in_len = len(self.transceiver1.incoming_channels)
-        self.assertEqual(out_len, 1)
-        self.assertEqual(in_len, 1)
-
-        test1 = "test outgoing 1"
-        # put into q1 via transceiver 1
-        self.transceiver1.outgoing_channels[2].put(test1)
-        # get out via transceiver 1
-        result1 = self.transceiver1.outgoing_channels[2].get()
-        # make sure result is correct
-        self.assertEqual(result1, test1, "Outgoing channel from 1->2 input from 1 failed")
-        # make sure q1 is empty
-        self.assertTrue(self.transceiver1.outgoing_channels[2].empty())
-
-        test2 = "test incoming 1"
-        # put into q1 via transceiver 1
-        self.transceiver1.outgoing_channels[2].put(test2)
-        # get out via transceiver 2
-        result2 = self.transceiver2.incoming_channels[1].get()
-        # make sure result is correct
-        self.assertEqual(result2, test2, "Incoming channel from 1->2 input from 1 failed")
-        # make sure empty afterwards
-        self.assertTrue(self.transceiver1.outgoing_channels[2].empty())
+        self.channels.add_channel(1, self.q1)
+        self.channels.add_channel(2, self.q2)
 
     def testSendWithTwoDevices(self):
         # send via transceiver 1
         test1 = 1234
         self.transceiver1.send(test1)
-        # check message is in appropriate incoming channel in transceiver 2
-        result1 = self.transceiver2.incoming_channels[1].get()
+        # check message is received in queue2
+        result1 = self.q2.get()
         self.assertEqual(result1, test1)
 
         test2 = 4321
         self.transceiver2.send(test2)
-        result2 = self.transceiver1.incoming_channels[2].get()
+        result2 = self.q1.get()
         self.assertEqual(result2, test2)
 
     def testSendWithMultipleDevices(self):
         # nodeid=3
-        self.transceiver3 = Transceiver()
+        self.transceiver3 = Transceiver(3, self.channels)
 
-        q3 = queue.Queue() # 1 to 3
-        q4 = queue.Queue() # 3 to 1
-        q5 = queue.Queue() # 2 to 3
-        q6 = queue.Queue() # 3 to 2
+        self.q3 = queue.Queue() # for node 3
 
-        self.transceiver1.set_outgoing_channel(3, q3)
-        self.transceiver1.set_incoming_channel(3, q4)
-
-        self.transceiver2.set_outgoing_channel(3, q5)
-        self.transceiver2.set_incoming_channel(3, q6)
-
-        self.transceiver3.set_outgoing_channel(1, q4)
-        self.transceiver3.set_outgoing_channel(2, q6)
-        self.transceiver3.set_incoming_channel(1, q3)
-        self.transceiver3.set_incoming_channel(2, q5)
+        self.channels.add_channel(3, self.q3)
 
         test1 = 5678
         self.transceiver1.send(test1)
-        result_t2 = self.transceiver2.incoming_channels[1].get()
-        result_t3 = self.transceiver3.incoming_channels[1].get()
+        # not sending to itself
+        self.assertTrue(self.q1.empty())
+        result_t2 = self.q2.get()
+        result_t3 = self.q3.get()
+        # both receive correct message
         self.assertEqual(result_t2, test1, "t2 failed")
         self.assertEqual(result_t3, test1, "t3 failed")
-
-    def testReceive(self):
+        # all are empty after
+        self.assertTrue(self.q1.empty())
+        self.assertTrue(self.q2.empty())
+        self.assertTrue(self.q3.empty())
+    
+    def testReceiveTwoDevices(self):
+        # no dependence on send
         test1 = 8765
-        self.transceiver1.outgoing_channels[2].put(test1)
+        self.q2.put(test1)
         result1 = self.transceiver2.receive(None)
         self.assertEqual(result1, test1)
-    
+        self.assertTrue(self.q2.empty())
+
+        # test with send
+        test2 = 3210
+        self.transceiver1.send(test2)
+        self.assertFalse(self.q2.empty())
+        result2 = self.transceiver2.receive(None)
+        self.assertEqual(result2, test2)
+        self.assertTrue(self.q2.empty())
+
+
 
 if __name__ == '__main__':
     unittest.main()
