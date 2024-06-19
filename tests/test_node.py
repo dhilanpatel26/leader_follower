@@ -4,7 +4,7 @@ from signal import SIGTERM
 import multiprocessing as mp
 import sys
 sys.path.append('../protocol')
-from protocol.network_classes import Node
+from network_classes import Node, SharedQueueList
 
 def test_worker():
     print("child process starting...")
@@ -26,8 +26,15 @@ def test_send_and_receive(transceiver, node_id):
 class TestNode(unittest.TestCase):
     # Transceiver unit tests have passed
     def testConstructor(self):
+        channels_list = SharedQueueList()
+        q1 = mp.Queue() # node 1 
+        q2 = mp.Queue() # node 2 
+
+        channels_list.add_channel(1, q1)
+        channels_list.add_channel(2, q2)
+
         # test with nodeid of 1, no process function passed
-        node1 = Node(1, test_worker)
+        node1 = Node(1, channels_list, test_worker)
         self.assertEqual(node1.node_id, 1)
 
         # check hash is correct
@@ -42,7 +49,13 @@ class TestNode(unittest.TestCase):
         self.assertFalse(node1.process.is_alive())
 
     def testProcessStartStop(self):
-        node = Node(1, test_worker)
+        channels_list = SharedQueueList()
+        q1 = mp.Queue() # node 1 
+        q2 = mp.Queue() # node 2 
+        channels_list.add_channel(1, q1)
+        channels_list.add_channel(2, q2)
+
+        node = Node(1, channels_list, test_worker)
         node.start()
         self.assertTrue(node.process.is_alive())
         node.stop()
@@ -52,17 +65,15 @@ class TestNode(unittest.TestCase):
         self.assertEqual(node.process.exitcode, -SIGTERM)
 
     def testProcessSendBetweenTwoProcesses(self):
-        node1 = Node(1, test_transmission, "not none")
-        node2 = Node(2, test_transmission, "not none")
+        channels_list = SharedQueueList()
+        q1 = mp.Queue() # node 1 
+        q2 = mp.Queue() # node 2 
 
-        q1 = mp.Queue() # 1 to 2
-        q2 = mp.Queue() # 2 to 1
+        channels_list.add_channel(1, q1)
+        channels_list.add_channel(2, q2)
 
-        node1.set_outgoing_channel(2, q1)
-        node1.set_incoming_channel(2, q2)
-
-        node2.set_outgoing_channel(1, q2)
-        node2.set_incoming_channel(1, q1)
+        node1 = Node(1, channels_list, test_transmission, "not none")
+        node2 = Node(2, channels_list, test_transmission, "not none")
 
         node1.start()
         node2.start()
@@ -70,8 +81,8 @@ class TestNode(unittest.TestCase):
         node1.join()
         node2.join()
 
-        self.assertFalse(node1.transceiver.incoming_channels[2].empty())
-        self.assertFalse(node2.transceiver.incoming_channels[1].empty())
+        self.assertFalse(channels_list.channels[1].empty())
+        self.assertFalse(channels_list.channels[2].empty())
 
         result1 = node1.transceiver.receive(2)
         result2 = node2.transceiver.receive(2)

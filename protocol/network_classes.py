@@ -6,7 +6,7 @@ import queue as q
 class Node:
     def __init__(self, node_id, shared_queues, target_func=None, target_args=None):
         self.node_id = node_id
-        self.transceiver = Transceiver(shared_queues)
+        self.transceiver = Transceiver(node_id, shared_queues)
         self.thisDevice = dc.ThisDevice(self.__hash__() % 10000, self.transceiver)
         # for testing purposes, so node can be tested without device protocol fully implemented
         # can be removed later
@@ -29,13 +29,6 @@ class Node:
     def join(self):
         # not sure if needed for protocol, but was used during testing
         self.process.join()
-
-    def set_outgoing_channel(self, target_node_id, queue):
-        self.transceiver.set_outgoing_channel(target_node_id, queue)
-
-    def set_incoming_channel(self, target_node_id, queue):
-        self.transceiver.set_incoming_channel(target_node_id, queue)
-
 
 class Network:
     def __init__(self):
