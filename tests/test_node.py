@@ -1,5 +1,5 @@
 import unittest
-from time import sleep
+from time import sleep, time
 from signal import SIGTERM
 import multiprocessing as mp
 import sys
@@ -23,14 +23,37 @@ def test_send_and_receive(transceiver, node_id):
     result = transceiver.receive(2)
     print(result)
 
+def test_leader(transceiver, node_id):
+    print("sending as leader")
+    transceiver.send(node_id)
+    result = transceiver.receive(3)
+    print("leader received:", result)
+
+def test_follow(transceiver, node_id):
+    result = transceiver.receive(3)
+    if result == 1:
+        transceiver.send(node_id)
+
+def test_listen(transceiver, node_id):
+    start = time()
+
+    result = transceiver.receive(3)
+    print("listener received:", result)
+
+    result = transceiver.receive(3)
+    print("listener received:", result)
+
+
 class TestNode(unittest.TestCase):
     def setUp(self):
         self.channels_list = SharedQueueList()
         self.q1 = mp.Queue() # node 1 
         self.q2 = mp.Queue() # node 2 
+        self.q3 = mp.Queue()
 
         self.channels_list.add_channel(1, self.q1)
         self.channels_list.add_channel(2, self.q2)
+        self.channels_list.add_channel(3, self.q3)
 
     # Transceiver unit tests have passed
     def testConstructor(self):
@@ -92,7 +115,18 @@ class TestNode(unittest.TestCase):
         self.assertTrue(self.channels_list.channels[2].empty())
 
     def testProcessSendBetweenMultipleProcesses(self):
-        pass
+        node1 = Node(1, self.channels_list, test_leader, "flag")
+        node2 = Node(2, self.channels_list, test_follow, "flag")
+        node3 = Node(3, self.channels_list, test_listen, "flag")
+
+        node1.start()
+        node2.start()
+        node3.start()
+
+        node1.join()
+        node2.join()
+        node3.join()
+
         # test three comm lines created and can send individually
         # test can send multiple (for attendance)
 
