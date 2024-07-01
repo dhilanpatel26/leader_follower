@@ -20,6 +20,19 @@ def test_tiebreaker_protocol():
     time.sleep(5)
     rogue_node.start()
 
+    normal_node_id = normal_node.thisDevice.get_id()
+    rogue_node_id = rogue_node.thisDevice.get_id()
+
+    time.sleep(30)
+    
+    normal_node.stop()
+    rogue_node.stop()
+
+    print(normal_node)
+    print(rogue_node)
+
+
+
 def main():
     test_tiebreaker_protocol()
 

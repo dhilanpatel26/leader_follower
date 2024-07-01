@@ -317,15 +317,16 @@ class ThisDevice(Device):
         print("Follower handling D_LIST")
         self.log_status("HANDLING DLIST")
         # handle already received device
-        if self.received_follower_id() not in self.device_list.get_ids():
-            self.log_status("ADDING " + str(self.received_follower_id()) + " TO DLIST")
-            self.device_list.add_device(id=self.received_follower_id(), task=self.received_payload())
+        #if self.received_follower_id() not in self.device_list.get_ids():
+        # ^^ won't account for task changes - will we take care of that in different message?
+        self.log_status("ADDING " + str(self.received_follower_id()) + " TO DLIST")
+        self.device_list.add_device(id=self.received_follower_id(), task=self.received_payload())
 
         # handle the rest of the list
         while self.receive(duration=0.5, action_value=Action.D_LIST.value):  # while still receiving D_LIST
-            if self.received_follower_id() not in self.device_list.get_ids():
-                self.log_status("ADDING " + str(self.received_follower_id()) + " TO DLIST")
-                self.device_list.add_device(id=self.received_follower_id(), task=self.received_payload())
+            #if self.received_follower_id() not in self.device_list.get_ids():
+            self.log_status("ADDING " + str(self.received_follower_id()) + " TO DLIST")
+            self.device_list.add_device(id=self.received_follower_id(), task=self.received_payload())
 
     def follower_drop_disconnected(self):
         """
