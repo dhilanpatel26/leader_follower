@@ -1,12 +1,16 @@
 import time
-from harness_message import Message, Action
+from messages_harness import Message, Action
 from typing import Dict, List, Set
-#from network_classes import Transceiver
-#this import causes circular w network classes
+from pathlib import Path
+import csv
 
 
-MISSED_THRESHOLD: int = 1
-RESPONSE_ALLOWANCE: float = 2  # subject to change
+CURRENT_FILE = Path(__file__).absolute()
+PROTOCOL_DIR = CURRENT_FILE.parent
+OUTPUT_DIR = PROTOCOL_DIR / "output"
+
+MISSED_THRESHOLD: int = 2
+RESPONSE_ALLOWANCE: float = 1  # subject to change
 PRECISION_ALLOWANCE: int = 5
 RECEIVE_TIMEOUT: float = 0.2
 ATTENDANCE_DURATION: float = 2
@@ -51,6 +55,9 @@ class Device:
         :return: number of missed check-ins for this Device.
         """
         return self.missed
+
+    def reset_missed(self):
+        self.missed = 0
 
     def get_task(self) -> int:
         """
@@ -103,6 +110,7 @@ class ThisDevice(Device):
         self.received: int | None = None  # will be an int representation of message
         self.transceiver = transceiver  # plugin object for sending and receiving messages
         self.numHeardDLIST: int = 0
+        self.outPath = OUTPUT_DIR / ("device_log_" + str(self.id) + ".csv")
 
     def send(self, action: int, payload: int, leader_id: int, follower_id: int, duration: float = 0.0):
         """
@@ -115,11 +123,10 @@ class ThisDevice(Device):
         """
         msg = Message(action, payload, leader_id, follower_id).msg
 
-        end_time = time.time() + duration
-        while time.time() < end_time:
-            self.transceiver.send(msg)  # transceiver only deals with integers
-            # print("Sending", msg)
-            time.sleep(0.1)
+        # single-send with assumed perfect channel
+        # users take responsibility of implementing duration send where needed
+        self.transceiver.send(msg)  # transceiver only deals with integers
+        self.log_message(msg, 'SEND')
 
     def receive(self, duration, action_value=-1) -> bool:  # action_value=-1 means accepts any action
         """
@@ -133,27 +140,50 @@ class ThisDevice(Device):
         end_time = time.time() + duration
         while time.time() < end_time:
             self.received = self.transceiver.receive(timeout=RECEIVE_TIMEOUT)
-            # print("Received", self.received)
-            # if this is leader device but receiving message with different leader, handle tiebreaker
             if self.received and (self.leader_id != None) and (self.received_leader_id() != self.leader_id):
                 print(self.received_leader_id(), self.leader_id)
                 self.handle_tiebreaker(self.received_leader_id())
                 break
-            if self.received and ((action_value == -1) or (self.received_action() == action_value)):
+
+            if self.received and (action_value == -1 or self.received_action() == action_value):
+                self.log_message(self.received, 'RCVD')
                 return True
-            
         return False
 
     def received_action(self) -> int:
+        """
+        :return: action bit of last received message
+        :raise: ValueError if no message was received
+        """
+        if not self.received:
+            raise ValueError("No message was received")
         return self.received // int(1e10)
 
     def received_leader_id(self) -> int:
+        """
+        :return: leader id of last received message
+        :raise: ValueError if no message was received
+        """
+        if not self.received:
+            raise ValueError("No message was received")
         return self.received % int(1e8) // int(1e4)
 
     def received_follower_id(self) -> int:
+        """
+        :return: follower id of last received message
+        :raise: ValueError if no message was received
+        """
+        if not self.received:
+            raise ValueError("No message was received")
         return self.received % int(1e4)
 
     def received_payload(self) -> int:
+        """
+        :return: payload of last received message
+        :raise: ValueError if no message was received
+        """
+        if not self.received:
+            raise ValueError("No message was received")
         return self.received % int(1e10) // int(1e8)
 
     def setup(self):
@@ -165,12 +195,12 @@ class ThisDevice(Device):
         print("Listening for leader's attendance")
         if self.receive(duration=3):
             print("Heard someone, listening for attendance")
-            while not self.receive(duration=1, action_value=Action.ATTENDANCE.value):
-                print("STUCK")
+            while not self.receive(duration=3, action_value=Action.ATTENDANCE.value):
+                # print("Device", self.id, "is STUCK")
                 pass
             self.make_follower()
             self.follower_handle_attendance()
-            print("Leader heard, becoming follower")
+            print("Leader was heard, becoming follower")
             return  # early exit if follower
 
         print("Assuming position of leader")
@@ -185,19 +215,20 @@ class ThisDevice(Device):
         broadcasts device list if new device is heard.
         """
         print("Leader sending attendance")
+        self.log_status("SENDING ATTENDANCE")
         self.send(action=Action.ATTENDANCE.value, payload=0, leader_id=self.id, follower_id=0, duration=ATTENDANCE_DURATION)
 
         # prevents deadlock
-        # receive function takes care of time.time()
-        # TODO: is this the right way to do this while?
-        time.sleep(ATTENDANCE_DURATION/2)
-        while self.receive(duration=ATTENDANCE_DURATION, action_value=Action.ATT_RESPONSE.value):
-            # print("Leader heard attendance response from", self.received_follower_id())
+        while self.receive(duration=ATTENDANCE_DURATION*2, action_value=Action.ATT_RESPONSE.value):
+            print("Leader heard attendance response from", self.received_follower_id())
+            self.log_status("HEARD ATT_RESP FROM " + str(self.received_follower_id()))
             if self.received_follower_id() not in self.device_list.get_ids():
                 unused_tasks = self.device_list.unused_tasks()
                 print("Unused tasks: ", unused_tasks)
+                self.log_status("UNUSED TASKS: " + str(unused_tasks))
                 task = unused_tasks[0] if unused_tasks else 0
                 print("Leader picked up device", self.received_follower_id())
+                self.log_status("PICKED UP DEVICE " + str(self.received_follower_id()))
                 self.device_list.add_device(id=self.received_follower_id(), task=task)  # has not assigned task yet
 
     def leader_send_device_list(self):
@@ -211,23 +242,7 @@ class ThisDevice(Device):
             print("Leader sending D_LIST", id, device.task)
             self.send(action=Action.D_LIST.value, payload=device.task, leader_id=self.id, follower_id=id, duration=D_LIST_DURATION)
 
-    def handle_tiebreaker(self, otherLeader : int):
-        print("Tiebreaker hit by device ", self.id)
-        if self.leader_id < otherLeader:
-            if self.leader:
-                self.make_follower()
-                self.leader_id = otherLeader
-            else:
-                self.leader_id = otherLeader
-        else:
-            if self.leader and (otherLeader not in self.device_list.get_ids()):
-                self.leader_id = self.id
-                unused_tasks = self.device_list.unused_tasks()
-                print("Unused tasks: ", unused_tasks)
-                task = unused_tasks[0] if unused_tasks else 0
-                print("Leader picked up device", otherLeader)
-                self.device_list.add_device(id=otherLeader, task=task)  # has not assigned task yet
-        
+    # TODO: maybe handle leader collisions/tiebreakers here
     def leader_perform_check_in(self):
         """
         Leader executes check-in sequence for each follower in device_list. Updates
@@ -242,7 +257,8 @@ class ThisDevice(Device):
 
             got_response: bool = False
             # sending check-in to individual device
-            #print("Leader sending check-in to", id)
+            print("Leader sending check-in to", id)
+            self.log_status("SENDING CHECKIN TO " + str(id))
             self.send(action=Action.CHECK_IN.value, payload=0, leader_id=self.id, follower_id=id, duration=2)
             # device hangs in send() until finished sending
             end_time = time.time() + RESPONSE_ALLOWANCE
@@ -253,8 +269,11 @@ class ThisDevice(Device):
                         # early exit if heard
                         got_response = True
                         print("Leader heard check-in response from", id)
+                        self.log_status("HEARD CHECKIN RESPONSE FROM " + str(id))
                         break
-            if not got_response:
+            if got_response:
+                device.reset_missed()
+            else:
                 device.incr_missed()
 
     def leader_drop_disconnected(self):
@@ -266,6 +285,8 @@ class ThisDevice(Device):
             if device.get_missed() > MISSED_THRESHOLD:
                 self.device_list.remove_device(id=id)  # remove from own list
                 # sends a message for each disconnected device
+                print("Leader sending DELETE message")
+                self.log_status("SENDING DELETE")
                 self.send(action=Action.DELETE.value, payload=0, leader_id=self.id, follower_id=id, duration=DELETE_DURATION)
                 # broadcasts to entire channel, does not need a response confirmation
 
@@ -273,16 +294,19 @@ class ThisDevice(Device):
         """
         Called after follower has received attendance message and assigned to self.received.
         """
-        #print("Follower", self.id, "handling attendance")
+        print("Follower", self.id, "handling attendance")
+        self.log_status("HANDLING ATTENDANCE")
         self.leader_id = self.received_leader_id()
         # preconditions handled - always send response
+        time.sleep(ATTENDANCE_DURATION/2)
         self.send(action=Action.ATT_RESPONSE.value, payload=0, leader_id=self.leader_id, follower_id=self.id, duration=ATTENDANCE_DURATION)
 
     def follower_respond_check_in(self):
         """
         Called after follower has received check-in message. Responds with same message.
         """
-        #print("Follower responding to check-in")
+        print("Follower responding to check-in")
+        self.log_status("RESPONDING TO CHECKIN")
         self.send(action=Action.CHECK_IN.value, payload=0, leader_id=self.leader_id, follower_id=self.id, duration=2)
         # sending and receiving is along different channels for Transceiver, so this should not be a problem
 
@@ -291,8 +315,17 @@ class ThisDevice(Device):
         Called after follower receives D_LIST action from leader. Updates device list.
         """
         print("Follower handling D_LIST")
-        while self.receive(duration=1.5*D_LIST_DURATION, action_value=Action.D_LIST.value):  # while still receiving D_LIST
+        self.log_status("HANDLING DLIST")
+        # handle already received device
+        if self.received_follower_id() not in self.device_list.get_ids():
+            self.log_status("ADDING " + str(self.received_follower_id()) + " TO DLIST")
             self.device_list.add_device(id=self.received_follower_id(), task=self.received_payload())
+
+        # handle the rest of the list
+        while self.receive(duration=0.5, action_value=Action.D_LIST.value):  # while still receiving D_LIST
+            if self.received_follower_id() not in self.device_list.get_ids():
+                self.log_status("ADDING " + str(self.received_follower_id()) + " TO DLIST")
+                self.device_list.add_device(id=self.received_follower_id(), task=self.received_payload())
 
     def follower_drop_disconnected(self):
         """
@@ -301,145 +334,205 @@ class ThisDevice(Device):
         """
         self.device_list.remove_device(id=self.received_follower_id())
 
+    def log_message(self, msg: int, direction: str):
+        self.csvWriter.writerow([str(time.time()), 'MSG ' + direction, str(msg)])
+
+    def log_status(self, status: str):
+        self.csvWriter.writerow([str(time.time()), 'STATUS', status])
+
+    def handle_tiebreaker(self, otherLeader : int):
+        print("Tiebreaker hit by device ", self.id)
+        self.log_status("HEARD OTHER LEADER: " + str(otherLeader))
+        if self.leader_id < otherLeader:
+            if self.leader:
+                self.make_follower()
+                self.log_status("BECAME FOLLOWER")
+                self.leader_id = otherLeader
+            else:
+                self.leader_id = otherLeader
+                self.log_status("NEW LEADER: " + str(otherLeader))
+        else:
+            if self.leader and (otherLeader not in self.device_list.get_ids()):
+                unused_tasks = self.device_list.unused_tasks()
+                print("Unused tasks: ", unused_tasks)
+                task = unused_tasks[0] if unused_tasks else 0
+                print("Leader picked up device", otherLeader)
+                self.device_list.add_device(id=otherLeader, task=task)  # has not assigned task yet
+
     def test_tiebreaker(self):
-        # same protocol besides setup (always becomes leader)
-        print("Starting main on device " + str(self.id) + " - will always be leader")
-        
-        self.make_leader()
-        self.leader_id = self.id
-        self.device_list.add_device(id=self.id, task=1)  # put itself in devicelist with first task
-        self.leader_send_attendance()
+        with self.outPath.open("w", encoding="utf-8", newline='') as file:
+            # format is TIME, TYPE (STATUS, SENT, RECEIVED), CONTENT (<MSG>, <STATUS UPDATE>)
+            self.csvWriter = csv.writer(file, dialect='excel')
+            # create device object
+            print("Starting main on device " + str(self.id) + " - will always be leader")
+            self.log_status("ROGUE LEADER")
+            self.make_leader()
+            self.leader_id = self.id
+            self.device_list.add_device(id=self.id, task=1)  # put itself in devicelist with first task
+            self.leader_send_attendance()
 
-        while True:
-            if self.get_leader():
-                print("Device:", self.id, self.leader, "\n", self.device_list)
-                self.leader_send_attendance()
+            # global looping
+            while True:
+                if self.get_leader():
+                    print("Device:", self.id, self.leader, "\n", self.device_list)
+                    self.leader_send_attendance()
+                    if not self.get_leader():
+                        continue
+                    self.leader_send_device_list()
 
-                self.leader_send_device_list()
+                    time.sleep(2)
 
-                # will be helpful if leader works through followers in
-                # same order each time to increase clock speed
-                self.leader_perform_check_in()  # takes care of sending and receiving
+                    # will be helpful if leader works through followers in
+                    # same order each time to increase clock speed
+                    self.leader_perform_check_in()  # takes care of sending and receiving
+                    if not self.get_leader():
+                        continue
+                    time.sleep(2)
 
-                self.leader_drop_disconnected()
+                    self.leader_drop_disconnected()
 
-            if not self.get_leader():
-                print("Follower Device:", self.id, self.leader_id, "\n", self.device_list)
-                if not self.receive(duration=15):
-                    print("Is there anybody out there?")
-                    continue
-                    # takeover
-                elif abs(self.received_leader_id() - self.leader_id) > PRECISION_ALLOWANCE:  # account for loss of precision
-                    # print(self.received_leader_id())
-                    # print(self.leader_id)
-                    # print("CONTINUE")
-                    continue  # message was not from this device's leader - ignore
+                    time.sleep(2)
 
-                action = self.received_action()
-                # print(action)
+                    self.transceiver.clear()
 
-                # messages for all followers
-                match action:
-                    case Action.ATTENDANCE.value:
-                        # prevents deadlock between leader-follower first attendance state
-                        # print(self.id, self.device_list, self.device_list.find_device(self.id))
-                        if self.numHeardDLIST > 1 and self.device_list.find_device(self.id) is None:  # O(1) operation, quick
-                            self.follower_handle_attendance()
-                            self.numHeardDLIST = 0
-                    case Action.CHECK_IN.value:
-                        #print("Follower heard directed check-in")
-                        if abs(self.received_follower_id() - self.id) < PRECISION_ALLOWANCE:  # check-in directed to this device
-                            self.follower_respond_check_in()
-                        else:
-                            continue  # not necessary?
-                    case Action.DELETE.value:
-                        self.follower_drop_disconnected()  # even if self is wrongly deleted
-                        # that will be handled later in Action.ATTENDANCE.value
-                    case Action.D_LIST.value:
-                        self.follower_handle_dlist()
-                        self.numHeardDLIST += 1
-                    case Action.TASK_STOP.value:
-                        pass
-                    case Action.TASK_START.value:
-                        pass
-                    case _:
-                        pass
+                if not self.get_leader():
+                    print("Device:", self.id, self.leader, "\n", self.device_list)
+                    if not self.receive(duration=15):
+                        print("Is there anybody out there?")
+                        continue
+                        # takeover
+                    elif abs(self.received_leader_id() - self.leader_id) > PRECISION_ALLOWANCE:  # account for loss of precision
+                        # print(self.received_leader_id())
+                        # print(self.leader_id)
+                        # print("CONTINUE")
+                        continue  # message was not from this device's leader - ignore
+
+                    action = self.received_action()
+                    # print(action)
+
+                    # messages for all followers
+                    match action:
+                        case Action.ATTENDANCE.value:
+                            # prevents deadlock between leader-follower first attendance state
+                            if self.numHeardDLIST > 1 and self.device_list.find_device(self.id) is None:  # O(1) operation, quick
+                                self.follower_handle_attendance()
+                                self.numHeardDLIST = 0
+                        case Action.CHECK_IN.value:
+                            if abs(self.received_follower_id() - self.id) < PRECISION_ALLOWANCE:  # check-in directed to this device
+                                print("Follower", self.id, "heard directed check-in")
+                                self.follower_respond_check_in()
+                            else:
+                                continue  # not necessary?
+                        case Action.DELETE.value:
+                            self.follower_drop_disconnected()  # even if self is wrongly deleted
+                            # that will be handled later in Action.ATTENDANCE.value
+                        case Action.D_LIST.value:
+                            self.follower_handle_dlist()
+                            self.numHeardDLIST += 1
+                        case Action.TASK_STOP.value:
+                            pass
+                        case Action.TASK_START.value:
+                            pass
+                        case _:
+                            pass
+
+                        # probably do not need to clear follower channel
+                        # self.transceiver.clear()
 
     # TODO: print log to individual files
     def device_main(self):
         """
         Main looping protocol for ThisDevice.
         """
-        print("Starting main on device " + str(self.id))
-        # create device object
-        self.setup()
+        with self.outPath.open("w", encoding="utf-8", newline='') as file:
+            # format is TIME, TYPE (STATUS, SENT, RECEIVED), CONTENT (<MSG>, <STATUS UPDATE>)
+            self.csvWriter = csv.writer(file, dialect='excel')
+            
+            print("Starting main on device " + str(self.id))
+            # create device object
+            self.setup()
 
-        if self.get_leader():
-            print("--------Leader---------")
-        else:
-            print("--------Follower, listening--------")
-
-        # global looping
-        while True:
+            #confusing in tiebreaking/testing logs:
+            '''
             if self.get_leader():
-                #print("Device:", self.id, self.leader, "\n", self.device_list)
-                self.leader_send_attendance()
+                print("--------Leader---------")
+                self.log_status("BECAME LEADER")
+            else:
+                print("--------Follower, listening--------")
+                self.log_status("BECAME FOLLOWER")
+            '''
 
-                self.leader_send_device_list()
+            # global looping
+            while True:
+                if self.get_leader():
+                    print("Device:", self.id, self.leader, "\n", self.device_list)
+                    self.leader_send_attendance()
 
-                # will be helpful if leader works through followers in
-                # same order each time to increase clock speed
-                self.leader_perform_check_in()  # takes care of sending and receiving
+                    self.leader_send_device_list()
 
-                self.leader_drop_disconnected()
+                    time.sleep(2)
 
-            if not self.get_leader():
-                #print("Device:", self.id, self.leader, "\n", self.device_list)
-                if not self.receive(duration=15):
-                    #print("Is there anybody out there?")
-                    continue
-                    # takeover
-                elif abs(self.received_leader_id() - self.leader_id) > PRECISION_ALLOWANCE:  # account for loss of precision
-                    # print(self.received_leader_id())
-                    # print(self.leader_id)
-                    # print("CONTINUE")
-                    continue  # message was not from this device's leader - ignore
+                    # will be helpful if leader works through followers in
+                    # same order each time to increase clock speed
+                    self.leader_perform_check_in()  # takes care of sending and receiving
 
-                action = self.received_action()
-                # print(action)
+                    time.sleep(2)
 
-                # messages for all followers
-                match action:
-                    case Action.ATTENDANCE.value:
-                        # prevents deadlock between leader-follower first attendance state
-                        # print(self.id, self.device_list, self.device_list.find_device(self.id))
-                        if self.numHeardDLIST > 1 and self.device_list.find_device(self.id) is None:  # O(1) operation, quick
-                            self.follower_handle_attendance()
-                            self.numHeardDLIST = 0
-                    case Action.CHECK_IN.value:
-                        #print("Follower heard directed check-in")
-                        if abs(self.received_follower_id() - self.id) < PRECISION_ALLOWANCE:  # check-in directed to this device
-                            self.follower_respond_check_in()
-                        else:
-                            continue  # not necessary?
-                    case Action.DELETE.value:
-                        self.follower_drop_disconnected()  # even if self is wrongly deleted
-                        # that will be handled later in Action.ATTENDANCE.value
-                    case Action.D_LIST.value:
-                        self.follower_handle_dlist()
-                        self.numHeardDLIST += 1
-                    case Action.TASK_STOP.value:
-                        pass
-                    case Action.TASK_START.value:
-                        pass
-                    case _:
-                        pass
+                    self.leader_drop_disconnected()
+
+                    time.sleep(2)
+
+                    self.transceiver.clear()
+
+                if not self.get_leader():
+                    print("Device:", self.id, self.leader, "\n", self.device_list)
+                    if not self.receive(duration=15):
+                        print("Is there anybody out there?")
+                        continue
+                        # takeover
+                    elif abs(self.received_leader_id() - self.leader_id) > PRECISION_ALLOWANCE:  # account for loss of precision
+                        # print(self.received_leader_id())
+                        # print(self.leader_id)
+                        # print("CONTINUE")
+                        continue  # message was not from this device's leader - ignore
+
+                    action = self.received_action()
+                    # print(action)
+
+                    # messages for all followers
+                    match action:
+                        case Action.ATTENDANCE.value:
+                            # prevents deadlock between leader-follower first attendance state
+                            if self.numHeardDLIST > 1 and self.device_list.find_device(self.id) is None:  # O(1) operation, quick
+                                self.follower_handle_attendance()
+                                self.numHeardDLIST = 0
+                        case Action.CHECK_IN.value:
+                            if abs(self.received_follower_id() - self.id) < PRECISION_ALLOWANCE:  # check-in directed to this device
+                                print("Follower", self.id, "heard directed check-in")
+                                self.follower_respond_check_in()
+                            else:
+                                continue  # not necessary?
+                        case Action.DELETE.value:
+                            self.follower_drop_disconnected()  # even if self is wrongly deleted
+                            # that will be handled later in Action.ATTENDANCE.value
+                        case Action.D_LIST.value:
+                            self.follower_handle_dlist()
+                            self.numHeardDLIST += 1
+                        case Action.TASK_STOP.value:
+                            pass
+                        case Action.TASK_START.value:
+                            pass
+                        case _:
+                            pass
+
+                        # probably do not need to clear follower channel
+                        # self.transceiver.clear()
 
 
 class DeviceList:
     """ Container for lightweight Device objects, held by ThisDevice. """
 
-    def __init__(self, num_tasks=4):
+    def __init__(self, num_tasks=8):
         """
         Non-default constructor for DeviceList object.
         :param num_tasks: size of DeviceList, number of tasks.
@@ -474,13 +567,22 @@ class DeviceList:
         return len(self.devices)
 
     def get_device_list(self) -> Dict[int, Device]:
+        """
+        :return: dictionary of {id : Device}
+        """
         return self.devices
 
     def get_ids(self) -> Set[int]:
-        return set(self.devices.keys())  # hashtable
+        """
+        :return: hashable set of device ids
+        """
+        return set(self.devices.keys())
 
     def get_devices(self) -> Set[Device]:
-        return set(self.devices.values())  # hashtable
+        """
+        :return: hashable set of Device objects
+        """
+        return set(self.devices.values())
 
     def update_num_tasks(self, num_tasks: int):
         """
@@ -499,7 +601,7 @@ class DeviceList:
         device.set_task(task)
         self.devices[id] = device
 
-    def find_device(self, id: int) -> int or None:
+    def find_device(self, id: int) -> int | None:
         """
         Finds Device object with target id in DeviceList.
         :param id: identifier for target device.

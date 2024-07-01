@@ -1,5 +1,5 @@
 import time
-import harness_network as hn
+import network_harness as hn
 
 def test_tiebreaker_protocol():
     
