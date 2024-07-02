@@ -1,5 +1,6 @@
 import time
 import network_harness as hn
+import csv
 
 def test_tiebreaker_protocol():
     
@@ -28,8 +29,21 @@ def test_tiebreaker_protocol():
     normal_node.stop()
     rogue_node.stop()
 
-    #print(normal_node_id)
-    #print(rogue_node_id)
+    normal_log = f'output/device_log_{normal_node_id}.csv'
+    rogue_log = f'output/device_log_{rogue_node_id}.csv'
+
+    with open(normal_log, newline='') as normal_logs:
+        normal_reader = csv.reader(normal_logs, dialect='excel')
+        with open(rogue_log, newline='') as rogue_logs:
+            rogue_reader = csv.reader(rogue_logs, dialect='excel')
+
+            normal_leader = (normal_node_id > rogue_node_id)
+
+            if normal_leader:
+                for row in normal_reader:
+                    pass
+
+
 
 
 
