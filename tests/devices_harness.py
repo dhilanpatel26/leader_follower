@@ -337,9 +337,11 @@ class ThisDevice(Device):
 
     def log_message(self, msg: int, direction: str):
         self.csvWriter.writerow([str(time.time()), 'MSG ' + direction, str(msg)])
+        self.file.flush()
 
     def log_status(self, status: str):
         self.csvWriter.writerow([str(time.time()), 'STATUS', status])
+        self.file.flush()
 
     def handle_tiebreaker(self, otherLeader : int):
         print("Tiebreaker hit by device ", self.id)
@@ -361,9 +363,9 @@ class ThisDevice(Device):
                 self.device_list.add_device(id=otherLeader, task=task)  # has not assigned task yet
 
     def test_tiebreaker(self):
-        with self.outPath.open("w", encoding="utf-8", newline='') as file:
+        with self.outPath.open("w", encoding="utf-8", newline='') as self.file:
             # format is TIME, TYPE (STATUS, SENT, RECEIVED), CONTENT (<MSG>, <STATUS UPDATE>)
-            self.csvWriter = csv.writer(file, dialect='excel')
+            self.csvWriter = csv.writer(self.file, dialect='excel')
             # create device object
             print("Starting main on device " + str(self.id) + " - will always be leader")
             self.log_status("ROGUE LEADER")
@@ -445,9 +447,9 @@ class ThisDevice(Device):
         """
         Main looping protocol for ThisDevice.
         """
-        with self.outPath.open("w", encoding="utf-8", newline='') as file:
+        with self.outPath.open("w", encoding="utf-8", newline='') as self.file:
             # format is TIME, TYPE (STATUS, SENT, RECEIVED), CONTENT (<MSG>, <STATUS UPDATE>)
-            self.csvWriter = csv.writer(file, dialect='excel')
+            self.csvWriter = csv.writer(self.file, dialect='excel')
             
             print("Starting main on device " + str(self.id))
             # create device object
