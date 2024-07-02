@@ -356,6 +356,7 @@ class ThisDevice(Device):
                 self.log_status("NEW LEADER: " + str(otherLeader))
         else:
             if self.leader and (otherLeader not in self.device_list.get_ids()):
+                self.log_status("REMAINED LEADER")
                 unused_tasks = self.device_list.unused_tasks()
                 print("Unused tasks: ", unused_tasks)
                 task = unused_tasks[0] if unused_tasks else 0

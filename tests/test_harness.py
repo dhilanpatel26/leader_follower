@@ -32,16 +32,46 @@ def test_tiebreaker_protocol():
     normal_log = f'output/device_log_{normal_node_id}.csv'
     rogue_log = f'output/device_log_{rogue_node_id}.csv'
 
+    leader = (normal_node_id > rogue_node_id)
+
     with open(normal_log, newline='') as normal_logs:
         normal_reader = csv.reader(normal_logs, dialect='excel')
         with open(rogue_log, newline='') as rogue_logs:
             rogue_reader = csv.reader(rogue_logs, dialect='excel')
 
-            normal_leader = (normal_node_id > rogue_node_id)
+            normal_tiebreak_hit = False
+            rogue_tiebreak_hit = False
+            correct_leader_chosen = False
+            correct_follower_chosen = False
 
-            if normal_leader:
-                for row in normal_reader:
-                    pass
+            for row in normal_reader:
+                if (not normal_tiebreak_hit) and (row[2] == f'HEARD OTHER LEADER: {rogue_node_id}'):
+                    normal_tiebreak_hit = True
+                if (normal_tiebreak_hit and leader) and (row[2] == 'REMAINED LEADER'):
+                    correct_leader_chosen = True
+                    break
+                elif normal_tiebreak_hit and (not leader) and (row[2] == 'BECAME FOLLOWER'):
+                    correct_follower_chosen = True
+                    break
+
+            for row in rogue_reader:
+                if (not rogue_tiebreak_hit) and (row[2] == f'HEARD OTHER LEADER: {normal_node_id}'):
+                    rogue_tiebreak_hit = True
+                if rogue_tiebreak_hit and (not leader) and (row[2] == 'REMAINED LEADER'):
+                    correct_leader_chosen = True
+                    break
+                elif (rogue_tiebreak_hit and leader) and (row[2] == 'BECAME FOLLOWER'):
+                    correct_follower_chosen = True
+                    break
+
+                
+                
+
+            if normal_tiebreak_hit and rogue_tiebreak_hit and correct_follower_chosen and correct_leader_chosen: 
+                print('pass basic tiebreak')
+            else:
+                print('failed basic tiebreak', normal_tiebreak_hit, rogue_tiebreak_hit, correct_follower_chosen, correct_leader_chosen)
+
 
 
 
