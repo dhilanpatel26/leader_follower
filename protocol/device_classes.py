@@ -148,11 +148,12 @@ class ThisDevice(Device):
         end_time = time.time() + duration
         while time.time() < end_time:
             self.received = self.transceiver.receive(timeout=RECEIVE_TIMEOUT)
-            if self.received == Message.DEACTIVATE:
+            # always received in follower id
+            if self.received_action() == Action.DEACTIVATE.value and self.received_follower_id == self.id:
                 print("Device got deactivated by user")
                 self.turn_off()
                 return False
-            if self.received == Message.ACTIVATE:
+            if self.received_action() == Action.ACTIVATE.value and self.received_follower_id == self.id:
                 print("Device got reactivated by user")
                 self.turn_on()
                 return False  # wait for next cycle, prevents interpreting injection as device

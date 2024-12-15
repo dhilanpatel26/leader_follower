@@ -3,8 +3,6 @@ from enum import Enum
 
 class Message:
     """ Object carrying action, payload, option. """
-    ACTIVATE = 11111111111
-    DEACTIVATE = 22222222222
 
     def __init__(self, action: int, payload: int, leader_id: int, follower_id: int):
         """
@@ -47,4 +45,5 @@ class Action(Enum):
     OFF = 10
     ON = 11
     NEW_FOLLOWER = 12
-    
+    ACTIVATE = 13
+    DEACTIVATE = 14
