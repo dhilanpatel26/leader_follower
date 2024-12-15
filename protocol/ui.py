@@ -38,7 +38,7 @@ class UserInterface(ThisDevice):
                     if follower_id not in self.device_list:
                         self.flag("NEW", follower_id)
                     self.devices[follower_id] = Status.FOLLOWER.value
-                    self.flag("FOLLOWER", follower_id)
+                    self.flag("ALIVE", follower_id)
                     break
                 case Action.NEW_FOLLOWER.value:
                     follower_id = self.received_follower_id()

@@ -156,6 +156,7 @@ class ThisDevice(Device):
             if self.received_action() == Action.ACTIVATE.value and self.received_follower_id == self.id:
                 print("Device got reactivated by user")
                 self.turn_on()
+                self.make_follower()
                 return False  # wait for next cycle, prevents interpreting injection as device
             # if a new leader is recognized, move into tiebreak scenario
             if self.received and self.leader_id and self.received_leader_id() != self.leader_id:  # another follower out there
@@ -431,7 +432,7 @@ class ThisDevice(Device):
 
     def turn_on(self):
         self.active = True
-        self.send(Action = Action.OFF.value, payload=0, leader_id=self.id, follower_id=self.id)
+        self.send(Action = Action.ON.value, payload=0, leader_id=self.id, follower_id=self.id)
 
     # START TEST HARNESS FUNCTIONS
 

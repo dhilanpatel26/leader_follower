@@ -4,7 +4,6 @@ const server = require('http').Server(app);
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ server: server });
 var frontend = null;
-var backend = null;
 
 // TODO: should we save a ws : node id mapping or have transceivers send their id?
 wss.on('connection', function connection(ws) {
@@ -22,34 +21,21 @@ wss.on('connection', function connection(ws) {
         const tag = parts[0];
         const id = parts[1];
 
-        if (tag === "NEW") {
-            if (frontend) {
-
-            }
-        } else if (tag === "DEAD") {
-
-        } else if (tag === "FOLLOWER") {
-
-        } else if (tag === "LEADER") {
-
-        } else if (tag === "CONNECTED") {
-            if (id === "FRONTEND") {
-                frontend = ws;
-            } else if (id === "BACKEND") {
-                backend = ws;
-            }
-        }
- 
         if (['CONNECTED', 'SENT', 'RCVD', 'REACTIVATED', 'DEACTIVATED', 'LEADER', 'FOLLOWER'].includes(tag)) {  // consider switching to hashset
             if (id === 'FRONTEND') {  // only applies to CONNECTED
                 frontend = ws;  // store frontend reference
-            } else if (id === "BACKEND") {
+            } else {
                 if (frontend) {
                     frontend.send(message);  // relay to frontend
                 }
             }
-        } else if (tag === 'TOGGLE') {
-            backend.send(message);
+        } else if (tag === 'INJECT') {  // right now is relaying to all clients (devices)
+            wss.clients.forEach(function each(client) {
+                // filter out the sender
+                if (client !== ws && client.readyState === WebSocket.OPEN) {
+                    client.send(id);
+                }
+            });
         }
     });
 });

@@ -28,18 +28,6 @@ function App() {
     const tag = parts[0];
     const id = parts[1];
 
-    if (tag === "NEW") {
-        addNewDevice(id);
-    } else if (tag === "DEAD") {
-        deactivateDevice(id);
-    } else if (tag === "FOLLOWER") {
-        if ()
-    } else if (tag === "LEADER") {
-
-    } else if (tag === "CONNECTED" && id === "FRONTEND") {
-        frontend = ws;
-    }
-
     if (tag === 'CONNECTED') {
       addNewDevice(id);
     } else if (tag === 'REACTIVATED') {
