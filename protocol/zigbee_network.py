@@ -35,6 +35,15 @@ class ZigbeeTransceiver(AbstractTransceiver):
         # Publish the message to the specified topic
         self.client.publish(topic, msg)
 
+    def receive(self, timeout, topic='zigbee2mqtt/bridge/response/device/permit_join'):
+        # Subscribe to the specified topic
+        self.client.subscribe(topic)
+        
+        # Wait for the message to arrive
+        self.client.on_message = self.on_message
+        self.client.loop_start()
+        self.client.loop_stop()
+
     def __del__(self):
         self.client.loop_stop()  # Stop the loop when the object is deleted
         self.client.disconnect()
