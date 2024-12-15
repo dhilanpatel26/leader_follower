@@ -148,14 +148,13 @@ class ThisDevice(Device):
         end_time = time.time() + duration
         while time.time() < end_time:
             self.received = self.transceiver.receive(timeout=RECEIVE_TIMEOUT)
-            if self.leader and self.received == Message.DEACTIVATE:
+            if self.received == Message.DEACTIVATE:
                 print("Device got deactivated by user")
-                self.active = False
-                self.make_follower()  # essentially wipe data
+                self.turn_off()
                 return False
             if self.received == Message.ACTIVATE:
                 print("Device got reactivated by user")
-                self.active = True
+                self.turn_on()
                 return False  # wait for next cycle, prevents interpreting injection as device
             # if a new leader is recognized, move into tiebreak scenario
             if self.received and self.leader_id and self.received_leader_id() != self.leader_id:  # another follower out there
@@ -423,14 +422,26 @@ class ThisDevice(Device):
         self.csvWriter.writerow([str(time.time()), 'STATUS', status])
         self.file.flush()
 
+    def turn_off(self):
+        self.active = False
+        self.leader = False  # essentially wipe data
+        # always send follower id, even if deactivated device was a leader
+        self.send(Action = Action.OFF.value, payload=0, leader_id=0, follower_id=self.id)
+
+    def turn_on(self):
+        self.active = True
+        self.send(Action = Action.OFF.value, payload=0, leader_id=self.id, follower_id=self.id)
+
     # START TEST HARNESS FUNCTIONS
 
     def make_follower(self):
         super().make_follower()
+        self.send(action=Action.NEW_FOLLOWER.value, payload=0, leader_id=0, follower_id=self.id)
         self.log_status("BECOMING FOLLOWER")
     
     def make_leader(self):
         super().make_leader()
+        self.send(action=Action.NEW_LEADER.value, payload=0, leader_id=self.id, follower_id=0)
         self.log_status("BECOMING LEADER")
         
     def test_setup_leader_only_sends_attendance(self):

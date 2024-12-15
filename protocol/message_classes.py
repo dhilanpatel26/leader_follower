@@ -44,4 +44,7 @@ class Action(Enum):
     TASK_START = 7  # leader sends personalized message to a tracked follower
     TASK_STOP = 8  # leader sends personalized message to a tracked follower
     INFORMATION = 9  # any device sends information to channel TODO: implement database
-
+    OFF = 10
+    ON = 11
+    NEW_FOLLOWER = 12
+    
