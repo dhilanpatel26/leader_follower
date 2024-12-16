@@ -2,6 +2,7 @@ import os
 import time
 from message_classes import Message, Action
 from abstract_network import AbstractTransceiver
+from zigbee_network import ZigbeeTransceiver
 from typing import Any, Dict, List, Set
 from pathlib import Path
 import csv
@@ -20,14 +21,26 @@ class Status(Enum):
 class UserInterface(ThisDevice):
     """ Contains backend logic for user interface """
 
-    def __init__(self, transceiver: AbstractTransceiver):
-        super().__init__(transceiver=transceiver)
+    def __init__(self, transceiver: AbstractTransceiver, id=-1):
+        super().__init__(transceiver=transceiver, id=id)
         self.devices: Dict[int, int] = {}
 
     def flag(self, tag, id):
-        asyncio.run(self.notify_server(f"{tag},{id}"))
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # If the loop is already running, use it to run the coroutine
+                loop.run_until_complete(self.notify_server(f"{tag},{id}"))
+            else:
+                # If the loop is not running, use asyncio.run()
+                asyncio.run(self.notify_server(f"{tag},{id}"))
+        except RuntimeError:
+            # If no event loop is available, create a new one
+            asyncio.run(self.notify_server(f"{tag},{id}"))
 
-    def main(self):
+    async def main(self):
+        self.task = asyncio.create_task(self.websocket_client())  # asynchronous, no need to await return 
+        
         while True:
             self.receive(duration=TAKEOVER_DURATION)
             action = self.received_action()
@@ -63,8 +76,10 @@ class UserInterface(ThisDevice):
                     break
                 case _:
                     pass
+        
+        await self.task
 
-    
+        
     # websocket client to connect to server.js and interact with injections
     async def websocket_client(self):
         uri = "ws://localhost:3000"  # server.js websocket server
@@ -75,7 +90,10 @@ class UserInterface(ThisDevice):
                 if isinstance(message, bytes):
                     message = message.decode("utf-8")
                 print(f"Received message: {message}")
-                tag, id = message.split()
+                msg = message.split(',')
+                if len(msg) != 2:
+                    continue
+                tag, id = msg[0], msg[1]
                 if tag == "TOGGLE":
                     device_id = int(id)
                     if self.devices[device_id] == Status.DEAD.value:
@@ -92,3 +110,6 @@ class UserInterface(ThisDevice):
             await websocket.send(message)
     
             
+if __name__ == "__main__":
+    ui = UserInterface(transceiver=ZigbeeTransceiver())
+    asyncio.run(ui.main())

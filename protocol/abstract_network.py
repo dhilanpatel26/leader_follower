@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABCMeta
 import websockets
 import multiprocessing
-import device_classes as dc
+# import device_classes as dc  # avoid circular import
 
 class AbstractNode(metaclass=ABCMeta):
 
@@ -30,13 +30,13 @@ class AbstractNode(metaclass=ABCMeta):
 
 class AbstractTransceiver(metaclass=ABCMeta):
 
-    @abstractmethod
-    def set_outgoing_channel(self, node_id, queue):
-        pass
+    # @abstractmethod
+    # def set_outgoing_channel(self, node_id, queue):
+    #     pass
 
-    @abstractmethod
-    def set_incoming_channel(self, node_id, queue):
-        pass
+    # @abstractmethod
+    # def set_incoming_channel(self, node_id, queue):
+    #     pass
 
     @abstractmethod
     def send(self, msg):
@@ -46,10 +46,10 @@ class AbstractTransceiver(metaclass=ABCMeta):
     def receive(self, timeout):
         pass
 
-    @abstractmethod
-    def clear(self):
-        pass
+    # @abstractmethod
+    # def clear(self):
+    #     pass
 
-    @abstractmethod
-    def log(self, data: str):
-        pass
+    # @abstractmethod
+    # def log(self, data: str):
+    #     pass

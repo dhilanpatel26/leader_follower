@@ -15,6 +15,7 @@ from collections import deque
 import hashlib
 from checkpoint_manager import CheckpointManager
 
+
 def device_process_function(device_id: int, node_id: int, active_value: int):
     """Standalone function for the device process"""
     try:
@@ -35,6 +36,8 @@ def device_process_function(device_id: int, node_id: int, active_value: int):
         import traceback
         traceback.print_exc()
         raise
+
+
 class SimulationNode(AbstractNode):
 
     def __init__(self, node_id, target_func = None, target_args = None, active: multiprocessing.Value = None, checkpoint_mgr: Optional[CheckpointManager] = None):  # type: ignore
@@ -58,8 +61,6 @@ class SimulationNode(AbstractNode):
         else:
             self.process = multiprocessing.Process(target=target_func)
             
-    
-    
     def generate_device_id(self, node_id):
         # Combine node_id and secret key
         input_string = f"{self.SECRET_KEY}{node_id}"
@@ -72,9 +73,6 @@ class SimulationNode(AbstractNode):
         device_id = int(hash_hex[:16], 16)
         
         return device_id
-    async def async_init(self):  # SimulationTransceiver
-        await self.transceiver.websocket_client()
-    
 
     def start(self):
         """Start the node's process"""

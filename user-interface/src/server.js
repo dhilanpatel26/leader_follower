@@ -31,7 +31,7 @@ wss.on('connection', function connection(ws) {
         } else if (tag === "LEADER") {
             frontend.send(message);  // relay to frontend
         } else if (tag === "TOGGLE") {
-            backend.end(message);
+            backend.send(message);
         } else if (tag === "CONNECTED") {
             if (id === "FRONTEND") {
                 frontend = ws;
