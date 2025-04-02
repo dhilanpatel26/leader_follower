@@ -11,10 +11,10 @@ from ui_device import UIDevice
 
 class ZigbeeNode():
      
-    def __init__(self, node_id, active: multiprocessing.Value = None, ip= '192.168.68.89', target_func = None, target_args = None):  # type: ignore
+    def __init__(self, node_id, active: multiprocessing.Value = None, ip= '169.254.72.169', target_func = None, target_args = None):  # type: ignore
         self.node_id = node_id
         self.active = active
-        self.transceiver = ZigbeeTransceiver(broker_address=ip, broker_port=1883, active=self.active, parent = self)  # address and port subject to change
+        self.transceiver = ZigbeeTransceiver(broker_address=ip, broker_port=6789, active=self.active, parent = self)  # address and port subject to change
         self.thisDevice = dc.ThisDevice(self.node_id, self.transceiver)
         #self.setup(node_id, target_func, target_args, active)
         
@@ -36,12 +36,12 @@ class ZigbeeNode():
         self.thisDevice.device_main()
 
 class ZigbeeUINode(ZigbeeNode):
-    def __init__(self, node_id=-1, active: multiprocessing.Value = None, ip= '192.168.68.89', target_func = None, target_args = None):
+    def __init__(self, node_id=-1, active: multiprocessing.Value = None, ip= '169.254.72.169', target_func = None, target_args = None):
         self.node_id = node_id
         self.active = active
         self.transceiver = ZigbeeTransceiver(
             broker_address=ip,
-            broker_port=1883,
+            broker_port=6789,
             active=self.active,
             parent=self,
             use_mock=True  # Use mock for UI testing
@@ -97,7 +97,7 @@ class MockMQTTClient:
 
 class ZigbeeTransceiver():
     
-    def __init__(self, broker_address='192.168.68.89', broker_port=1883, active: multiprocessing.Value = None, parent: ZigbeeNode = None, username=None, password=None, use_mock=False):
+    def __init__(self, broker_address='169.254.72.169', broker_port=6789, active: multiprocessing.Value = None, parent: ZigbeeNode = None, username=None, password=None, use_mock=False):
         self.active = active
         self.parent = parent
         self.broker_address = broker_address
