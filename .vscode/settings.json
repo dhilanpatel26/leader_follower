@@ -1,6 +1,0 @@
-{
-    "python.analysis.extraPaths": [
-        "./RobotBase/functionality_classes",
-        "./RobotBase/quadrant_movement"
-    ]
-}
