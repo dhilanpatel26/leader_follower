@@ -120,7 +120,7 @@ class LineFollowing:
                 continue
 
             sensor_data = self.line.readData()
-            print(f"Sensor data: {sensor_data}")
+            #print(f"Sensor data: {sensor_data}")
 
             if sensor_data == [1, 1, 1, 1]:
                 if not self.prevTriggered:

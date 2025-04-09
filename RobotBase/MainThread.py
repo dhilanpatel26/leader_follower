@@ -91,7 +91,6 @@ class MainThread:
             self.move_straight_reverse(11.2)
             time.sleep(0.5)
         elif quad_num == 3:
-            self.lf_stop(1, True)
             self.move_straight(9.5)
             time.sleep(2)
             self.lf_stop(1, False)
