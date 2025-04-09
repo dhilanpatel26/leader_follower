@@ -67,8 +67,10 @@ class MainThread:
             time.sleep(0.2)
             self.move_straight(4)
             time.sleep(2)
-            self.lf_stop(2, False)
-            time.sleep(0.2)
+            self.lf_stop(1, False)
+            time.sleep(2)
+            self.lf_stop(1, False)
+            time.sleep(2)
             self.turn_right()
             time.sleep(0.2)
             self.move_straight(8)
@@ -78,7 +80,10 @@ class MainThread:
         elif quad_num == 2:
             self.move_straight(9.5)
             time.sleep(2)
-            self.lf_stop(2, False)
+            self.lf_stop(1, False)
+            time.sleep(2)
+            self.lf_stop(1, False)
+            time.sleep(2)
             self.turn_left()
             time.sleep(0.2)
             self.move_straight(7)
@@ -252,27 +257,6 @@ class MainThread:
                         time.sleep(0.5)
                         self.handle_last_tag()
                         time.sleep(5)
-
-                        # realignment with wall after every 3 tags
-                        # if(self.last_detected_tag == 3 and current_tag == 1):
-                        #     if(not self.quad):
-                        #         self.turn_right()
-                        #         time.sleep(0.5)
-                        #         self.move_straight(16)
-                        #         time.sleep(0.5)
-                        #         self.move_straight_reverse(12)
-                        #         time.sleep(0.5)
-                        #         self.turn_left()
-                        #         time.sleep(0.5)
-                        #     elif(self.quad):
-                        #         self.turn_left()
-                        #         time.sleep(0.25)
-                        #         self.move_straight(16)
-                        #         time.sleep(0.5)
-                        #         self.move_straight_reverse(12)
-                        #         time.sleep(0.5)
-                        #         self.turn_right()
-                        #         time.sleep(0.5)
 
                         if current_tag == 1:
                             self.current_distance = self.map1dist
