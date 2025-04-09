@@ -33,5 +33,5 @@ class ZigbeeDriver():
 
 if __name__ == "__main__":
     driver = ZigbeeDriver()
-    asyncio.run(driver.test())
-    # asyncio.run(driver.main())
+    # asyncio.run(driver.test())
+    asyncio.run(driver.main())
