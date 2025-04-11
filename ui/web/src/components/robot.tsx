@@ -7,17 +7,21 @@ interface NodeProps {
     role: string;
     status?: string;
     task?: string;
+    missed?: number;
   };
 }
 
 const RobotNode: React.FC<NodeProps> = ({ node }) => {
-  const handleDeactivate = (e: React.MouseEvent) => {
+  const handleToggleActivation = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering parent container click events
     
-    if (confirm(`Are you sure you want to deactivate device ${node.id}?`)) {
-      // Send deactivate command to backend
+    const isActive = node.status !== 'inactive';
+    const action = isActive ? 'deactivate' : 'reactivate';
+    
+    if (confirm(`Are you sure you want to ${action} device ${node.id}?`)) {
+      // Send command to backend based on current status
       sendWebSocketCommand({
-        type: 'deactivate_device',
+        type: isActive ? 'deactivate_device' : 'reactivate_device',
         deviceId: node.id
       });
     }
@@ -44,13 +48,24 @@ const RobotNode: React.FC<NodeProps> = ({ node }) => {
         cursor: 'pointer',
         position: 'relative'
       }}
-      onClick={handleDeactivate}
-      title={`Click to deactivate device ${node.id}`}
+      onClick={handleToggleActivation}
+      title={`Click to ${node.status === 'inactive' ? 'reactivate' : 'deactivate'} device ${node.id}`}
     >
       {node.id}
       <div style={{ position: 'absolute', top: '-20px', fontSize: '12px' }}>
         {node.task && `Task: ${node.task}`}
       </div>
+      {node.status === 'inactive' && (
+        <div style={{ 
+          position: 'absolute', 
+          top: '50%', 
+          left: '50%', 
+          width: '80%', 
+          height: '2px', 
+          backgroundColor: 'red', 
+          transform: 'translate(-50%, -50%) rotate(45deg)'
+        }}></div>
+      )}
     </div>
   );
 };

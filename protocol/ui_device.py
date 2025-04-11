@@ -79,10 +79,9 @@ class UIDevice(ThisDevice):
                     if cmd.get('type') == 'deactivate_device':
                         device_id = cmd.get('deviceId')
                         if device_id:
-                            # Convert string ID to int if necessary
                             try:
                                 device_id = int(device_id)
-                                self.deactivate_device(device_id)
+                                self.toggle_device(device_id, activate=False)
                                 await websocket.send(json.dumps({
                                     "type": "command_response",
                                     "command": "deactivate_device",
@@ -96,8 +95,30 @@ class UIDevice(ThisDevice):
                                     "status": "error",
                                     "message": f"Invalid device ID format: {device_id}"
                                 }))
+                    
+                    elif cmd.get('type') == 'reactivate_device':
+                        device_id = cmd.get('deviceId')
+                        if device_id:
+                            try:
+                                device_id = int(device_id)
+                                self.toggle_device(device_id, activate=True)
+                                await websocket.send(json.dumps({
+                                    "type": "command_response",
+                                    "command": "reactivate_device",
+                                    "status": "success",
+                                    "message": f"Sent reactivation command to device {device_id}"
+                                }))
+                            except ValueError:
+                                await websocket.send(json.dumps({
+                                    "type": "command_response",
+                                    "command": "reactivate_device",
+                                    "status": "error",
+                                    "message": f"Invalid device ID format: {device_id}"
+                                }))
+                    
                 except json.JSONDecodeError:
                     print(f"Received invalid JSON: {message}")
+
                     
         except websockets.exceptions.ConnectionClosed as e:
             print(f"Client connection closed: {e}")
@@ -105,51 +126,49 @@ class UIDevice(ThisDevice):
             self.connected_clients.remove(websocket)
             print(f"Client disconnected: {client_address[0]}:{client_address[1]}")
 
-    def deactivate_device(self, device_id):
-        """Send deactivation message to a specific device"""
-        print(f"Sending deactivation command to device {device_id}")
+    def toggle_device(self, device_id, activate=False):
+        """Toggle device activation state"""
+        action_value = Action.ACTIVATE.value if activate else Action.DEACTIVATE.value
+        action_name = "activation" if activate else "deactivation"
         
-        # In a real setup, we would send to the transceiver
-        # The DEACTIVATE action is already defined in the Message class
-        msg = Message(Action.DEACTIVATE.value, 0, 0, device_id).msg
-        self.transceiver.send(msg)
+        print(f"Sending {action_name} command to device {device_id}")
         
+        # Create message with appropriate action
+        msg = Message(action_value, 0, 0, device_id).msg
+
+        is_mock = hasattr(self.transceiver, 'sub_client') and hasattr(self.transceiver.sub_client, '__class__') and \
+                self.transceiver.sub_client.__class__.__name__ == 'MockMQTTClient'
+                
+        if not is_mock:
+            self.transceiver.send(msg)
+        else:
+            print(f"Mock send: {msg}")
+
         # Log and notify UI clients
-        self.log_message(msg, 'SEND')
         self.send_update("message_log", {
             "type": "send",
-            "action": Action.DEACTIVATE.value,
+            "action": action_value,
             "payload": 0,
             "leader_id": 0,
             "follower_id": device_id,
-            "message": f"Deactivation command sent to device {device_id}"
+            "message": f"{action_name.capitalize()} command sent to device {device_id}"
         })
-
-    async def ws_handler(self, websocket):
-        """Handle WebSocket connections from clients"""
-        client_address = websocket.remote_address
-        print(f"WebSocket client connected from {client_address[0]}:{client_address[1]}")
-        self.connected_clients.add(websocket)
+        
+        # For mock devices in device_main simulation
         try:
-            await websocket.send(json.dumps({
-                "type": "initial_state",
-                "device_id": self.id,
-                "leader_id": self.leader_id,
-                "is_leader": False,
-                "is_follower": False,
-                "is_ui": True,
-                "device_list": self.format_device_list()
-            }))
-            
-            async for message in websocket:
-                print(f"Received message from client: {message}")
-                # We could handle commands from UI here
-                
-        except websockets.exceptions.ConnectionClosed as e:
-            print(f"Client connection closed: {e}")
-        finally:
-            self.connected_clients.remove(websocket)
-            print(f"Client disconnected: {client_address[0]}:{client_address[1]}")
+            # Access the mock_devices list if it exists in the current context
+            if hasattr(self, 'mock_devices'):
+                for i, device in enumerate(self.mock_devices):
+                    if device["id"] == device_id:
+                        # Set missed count based on activation state (0=active, 3=inactive)
+                        self.mock_devices[i]["missed"] = 0 if activate else 3
+                        status = "active" if activate else "inactive"
+                        print(f"Mock device {device_id} is now {status}")
+                        
+                        # Update UI
+                        self.send_update("device_list", self.mock_devices)
+        except Exception as e:
+            print(f"Error handling mock device: {e}")
 
     def format_device_list(self) -> List[Dict]:
         """Format device list for JSON serialization"""
@@ -185,7 +204,6 @@ class UIDevice(ThisDevice):
         """
         # Only log the message, don't actually send it
         msg = Message(action, payload, leader_id, follower_id).msg
-        self.log_message(msg, 'WOULD_SEND')
         
         # Broadcast to UI clients instead
         self.send_update("message_log", {
@@ -199,13 +217,11 @@ class UIDevice(ThisDevice):
     def make_leader(self):
         """Override make_leader to not send any messages"""
         super().make_leader()
-        self.log_status("WOULD BECOME LEADER")
         self.send_update("status_change", {"is_leader": True})
 
     def make_follower(self):
         """Override make_follower to not send any messages"""
         super().make_follower()
-        self.log_status("WOULD BECOME FOLLOWER")
         self.send_update("status_change", {"is_leader": False})
 
     # Override receive to broadcast received messages to UI
@@ -238,7 +254,7 @@ class UIDevice(ThisDevice):
                     self.send_update("device_list", self.format_device_list())
                 
             except Exception as e:
-                self.log_status(f"Error broadcasting message: {e}")
+                print(f"Error broadcasting message: {e}")
                 
         return result
     
@@ -253,7 +269,7 @@ class UIDevice(ThisDevice):
         self.device_role = "ui"
         
         # Create five mock devices for testing - initially device 1001 is the leader
-        mock_devices = [
+        self.mock_devices = [
             {"id": 1001, "task": 1, "leader": True, "missed": 0, "role": "leader"},   # Position 1
             {"id": 1002, "task": 2, "leader": False, "missed": 0, "role": "follower"},  # Position 2
             {"id": 1003, "task": 3, "leader": False, "missed": 0, "role": "follower"},  # Position 3
@@ -261,11 +277,11 @@ class UIDevice(ThisDevice):
             {"id": 1005, "task": 5, "leader": False, "missed": 0, "role": "follower"},  # Position 5
         ]
 
-        ui_device = {"id": self.id, "task": None, "leader": None, "missed": 0, "role": "ui"}
+        # ui_device = {"id": self.id, "task": None, "leader": None, "missed": 0, "role": "ui"}
         
         # Set the initial leader ID
         current_leader_idx = 0
-        self.leader_id = mock_devices[current_leader_idx]["id"]
+        self.leader_id = self.mock_devices[current_leader_idx]["id"]
         
         # For simulating device activities
         positions = {1: 0, 2: 1, 3: 2, 4: 3, 5: 4}  # Maps position to device index
@@ -277,12 +293,12 @@ class UIDevice(ThisDevice):
                 # Every 10 seconds, switch leader to another device (never UI device)
                 if counter % 10 == 0 and counter > 0:
                     # Make current leader a follower
-                    mock_devices[current_leader_idx]["leader"] = False
+                    self.mock_devices[current_leader_idx]["leader"] = False
                     
                     # Pick a new leader (cycling through devices 0-4)
                     current_leader_idx = (current_leader_idx + 1) % 5
-                    mock_devices[current_leader_idx]["leader"] = True
-                    self.leader_id = mock_devices[current_leader_idx]["id"]
+                    self.mock_devices[current_leader_idx]["leader"] = True
+                    self.leader_id = self.mock_devices[current_leader_idx]["id"]
                     
                     # Broadcast leadership change
                     self.send_update("status_change", {
@@ -304,7 +320,7 @@ class UIDevice(ThisDevice):
                 if counter % 15 == 0 and counter > 0:
                     # Pick a random device to move
                     device_idx = counter % 5
-                    old_task = mock_devices[device_idx]["task"]
+                    old_task = self.mock_devices[device_idx]["task"]
                     
                     # Find an empty position or swap with another device
                     new_task = (old_task % 5) + 1
@@ -312,11 +328,11 @@ class UIDevice(ThisDevice):
                     # Update position mapping
                     if new_task in positions:
                         other_device_idx = positions[new_task]
-                        mock_devices[other_device_idx]["task"] = old_task
+                        self.mock_devices[other_device_idx]["task"] = old_task
                         positions[old_task] = other_device_idx
                     
                     # Set new task for moved device
-                    mock_devices[device_idx]["task"] = new_task
+                    self.mock_devices[device_idx]["task"] = new_task
                     positions[new_task] = device_idx
                     
                     # Broadcast task assignment
@@ -325,9 +341,9 @@ class UIDevice(ThisDevice):
                         "action": 3,  # ASSIGN_TASK
                         "payload": new_task,
                         "leader_id": self.leader_id,
-                        "follower_id": mock_devices[device_idx]["id"]
+                        "follower_id": self.mock_devices[device_idx]["id"]
                     })
-                    print(f"Device {mock_devices[device_idx]['id']} moved to position {new_task}")
+                    print(f"Device {self.mock_devices[device_idx]['id']} moved to position {new_task}")
                 
                 # Every 8 seconds, simulate a heartbeat/ping
                 if counter % 8 == 0:
@@ -339,14 +355,14 @@ class UIDevice(ThisDevice):
                             "action": 5,  # PING
                             "payload": 0,
                             "leader_id": self.leader_id,
-                            "follower_id": mock_devices[target_idx]["id"]
+                            "follower_id": self.mock_devices[target_idx]["id"]
                         })
                         
                         # Simulate follower response
                         self.send_update("received_message", {
                             "action": 6,  # PONG
                             "leader_id": self.leader_id,
-                            "follower_id": mock_devices[target_idx]["id"],
+                            "follower_id": self.mock_devices[target_idx]["id"],
                             "payload": 0,
                             "raw": 6000000000000
                         })
@@ -356,13 +372,13 @@ class UIDevice(ThisDevice):
                     inactive_idx = counter % 5
                     if inactive_idx != current_leader_idx:  # Don't make leader inactive
                         # Toggle missed count (0 = active, >0 = inactive)
-                        mock_devices[inactive_idx]["missed"] = 0 if mock_devices[inactive_idx]["missed"] > 0 else 2
-                        status = "inactive" if mock_devices[inactive_idx]["missed"] > 0 else "active"
-                        print(f"Device {mock_devices[inactive_idx]['id']} is now {status}")
+                        self.mock_devices[inactive_idx]["missed"] = 0 if self.mock_devices[inactive_idx]["missed"] > 0 else 2
+                        status = "inactive" if self.mock_devices[inactive_idx]["missed"] > 0 else "active"
+                        print(f"Device {self.mock_devices[inactive_idx]['id']} is now {status}")
                 
                 # Every 5 seconds, broadcast updated device list
                 if counter % 5 == 0:
-                    self.send_update("device_list", mock_devices)
+                    self.send_update("device_list", self.mock_devices)
                     print("Device list updated")
                 
                 # Occasionally simulate arbitrary message exchange
@@ -372,33 +388,12 @@ class UIDevice(ThisDevice):
                     self.send_update("received_message", {
                         "action": action_type,
                         "leader_id": self.leader_id,
-                        "follower_id": mock_devices[counter % 5]["id"],
+                        "follower_id": self.mock_devices[counter % 5]["id"],
                         "payload": counter,
-                        "raw": int(f"{action_type}00{self.leader_id}0{mock_devices[counter % 5]['id']}{counter}")
+                        "raw": int(f"{action_type}00{self.leader_id}0{self.mock_devices[counter % 5]['id']}{counter}")
                     })
                 
                 counter += 1
                 time.sleep(1)
         except KeyboardInterrupt:
             print("UI Device shutting down")
-
-        # Add ability to deactivate mocked devices too
-        def deactivate_device(self, device_id):
-            """Deactivate a mock device"""
-            for i, device in enumerate(mock_devices):
-                if device["id"] == device_id:
-                    # Mark as inactive with high missed count
-                    mock_devices[i]["missed"] = 3
-                    print(f"Mock device {device_id} deactivated")
-                    
-                    # Update UI
-                    self.send_update("device_list", mock_devices)
-                    self.send_update("message_log", {
-                        "type": "send",
-                        "action": Action.DEACTIVATE.value,
-                        "payload": 0,
-                        "leader_id": 0, 
-                        "follower_id": device_id,
-                        "message": f"Deactivation command sent to device {device_id}"
-                    })
-                    break
