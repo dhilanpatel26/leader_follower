@@ -6,7 +6,7 @@ interface NodeProps {
     id: string;
     role: string;
     status?: string;
-    task?: number;
+    task?: string;
   };
 }
 
