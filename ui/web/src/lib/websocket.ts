@@ -72,3 +72,14 @@ export function setupReconnectionListeners() {
     }
   });
 }
+
+export function sendWebSocketCommand(command: any) {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify(command));
+    console.log('Sent command:', command);
+    return true;
+  } else {
+    console.error('WebSocket not connected. Cannot send command.');
+    return false;
+  }
+}

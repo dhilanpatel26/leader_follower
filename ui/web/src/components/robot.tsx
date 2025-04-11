@@ -1,33 +1,57 @@
 import React from 'react';
-import { Node } from '../data/types';
+import { sendWebSocketCommand } from '../lib/websocket';
 
-interface RobotNodeProps {
-  node: Node;
+interface NodeProps {
+  node: {
+    id: string;
+    role: string;
+    status?: string;
+    task?: number;
+  };
 }
 
-const RobotNode: React.FC<RobotNodeProps> = ({ node }) => {
-  const nodeColor = node.role === 'leader' ? 'red' : 'blue';
-  
-  const circleStyle: React.CSSProperties = {
-    width: '60px',
-    height: '60px',
-    borderRadius: '50%',
-    backgroundColor: nodeColor,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    color: 'white',
-    fontWeight: 'bold',
-    opacity: node.status === 'active' ? 1 : 0.5,
+const RobotNode: React.FC<NodeProps> = ({ node }) => {
+  const handleDeactivate = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering parent container click events
+    
+    if (confirm(`Are you sure you want to deactivate device ${node.id}?`)) {
+      // Send deactivate command to backend
+      sendWebSocketCommand({
+        type: 'deactivate_device',
+        deviceId: node.id
+      });
+    }
   };
   
+  // Determine color based on role and status
+  const getColor = () => {
+    if (node.status === 'inactive') return '#888888';
+    return node.role === 'leader' ? '#4caf50' : '#2196f3';
+  };
+
   return (
-    node.role !== 'ui' &&
-    (
-      <div style={circleStyle}>
-        {node.id}
+    <div 
+      style={{
+        width: '50px',
+        height: '50px',
+        borderRadius: '50%',
+        backgroundColor: getColor(),
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        color: 'white',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+        position: 'relative'
+      }}
+      onClick={handleDeactivate}
+      title={`Click to deactivate device ${node.id}`}
+    >
+      {node.id}
+      <div style={{ position: 'absolute', top: '-20px', fontSize: '12px' }}>
+        {node.task && `Task: ${node.task}`}
       </div>
-    )
+    </div>
   );
 };
 

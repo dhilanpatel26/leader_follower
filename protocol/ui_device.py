@@ -71,6 +71,78 @@ class UIDevice(ThisDevice):
             
             async for message in websocket:
                 print(f"Received message from client: {message}")
+                
+                # Process commands from UI
+                try:
+                    cmd = json.loads(message)
+                    
+                    if cmd.get('type') == 'deactivate_device':
+                        device_id = cmd.get('deviceId')
+                        if device_id:
+                            # Convert string ID to int if necessary
+                            try:
+                                device_id = int(device_id)
+                                self.deactivate_device(device_id)
+                                await websocket.send(json.dumps({
+                                    "type": "command_response",
+                                    "command": "deactivate_device",
+                                    "status": "success",
+                                    "message": f"Sent deactivation command to device {device_id}"
+                                }))
+                            except ValueError:
+                                await websocket.send(json.dumps({
+                                    "type": "command_response",
+                                    "command": "deactivate_device",
+                                    "status": "error",
+                                    "message": f"Invalid device ID format: {device_id}"
+                                }))
+                except json.JSONDecodeError:
+                    print(f"Received invalid JSON: {message}")
+                    
+        except websockets.exceptions.ConnectionClosed as e:
+            print(f"Client connection closed: {e}")
+        finally:
+            self.connected_clients.remove(websocket)
+            print(f"Client disconnected: {client_address[0]}:{client_address[1]}")
+
+    def deactivate_device(self, device_id):
+        """Send deactivation message to a specific device"""
+        print(f"Sending deactivation command to device {device_id}")
+        
+        # In a real setup, we would send to the transceiver
+        # The DEACTIVATE action is already defined in the Message class
+        msg = Message(Action.DEACTIVATE.value, 0, 0, device_id).msg
+        self.transceiver.send(msg)
+        
+        # Log and notify UI clients
+        self.log_message(msg, 'SEND')
+        self.send_update("message_log", {
+            "type": "send",
+            "action": Action.DEACTIVATE.value,
+            "payload": 0,
+            "leader_id": 0,
+            "follower_id": device_id,
+            "message": f"Deactivation command sent to device {device_id}"
+        })
+
+    async def ws_handler(self, websocket):
+        """Handle WebSocket connections from clients"""
+        client_address = websocket.remote_address
+        print(f"WebSocket client connected from {client_address[0]}:{client_address[1]}")
+        self.connected_clients.add(websocket)
+        try:
+            await websocket.send(json.dumps({
+                "type": "initial_state",
+                "device_id": self.id,
+                "leader_id": self.leader_id,
+                "is_leader": False,
+                "is_follower": False,
+                "is_ui": True,
+                "device_list": self.format_device_list()
+            }))
+            
+            async for message in websocket:
+                print(f"Received message from client: {message}")
                 # We could handle commands from UI here
                 
         except websockets.exceptions.ConnectionClosed as e:
@@ -171,7 +243,7 @@ class UIDevice(ThisDevice):
         return result
     
     # purely for testing without robots
-    def device_main_mocked(self):
+    def device_main(self):
         """Override device_main to avoid requiring real messages"""        
         # Notify connected clients we're online
         self.send_update("status", {"status": "online"})
@@ -309,3 +381,24 @@ class UIDevice(ThisDevice):
                 time.sleep(1)
         except KeyboardInterrupt:
             print("UI Device shutting down")
+
+        # Add ability to deactivate mocked devices too
+        def deactivate_device(self, device_id):
+            """Deactivate a mock device"""
+            for i, device in enumerate(mock_devices):
+                if device["id"] == device_id:
+                    # Mark as inactive with high missed count
+                    mock_devices[i]["missed"] = 3
+                    print(f"Mock device {device_id} deactivated")
+                    
+                    # Update UI
+                    self.send_update("device_list", mock_devices)
+                    self.send_update("message_log", {
+                        "type": "send",
+                        "action": Action.DEACTIVATE.value,
+                        "payload": 0,
+                        "leader_id": 0, 
+                        "follower_id": device_id,
+                        "message": f"Deactivation command sent to device {device_id}"
+                    })
+                    break
