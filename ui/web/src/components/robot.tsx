@@ -52,7 +52,7 @@ const RobotNode: React.FC<NodeProps> = ({ node }) => {
       title={`Click to ${node.status === 'inactive' ? 'reactivate' : 'deactivate'} device ${node.id}`}
     >
       {node.id}
-      <div style={{ position: 'absolute', top: '-20px', fontSize: '12px' }}>
+      <div style={{ position: 'absolute', top: '-20px', fontSize: '12px', color: 'black' }}>
         {node.task && `Task: ${node.task}`}
       </div>
       {node.status === 'inactive' && (
