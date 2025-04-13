@@ -44,7 +44,7 @@ class ZigbeeUINode(ZigbeeNode):
             broker_port=6789,
             active=self.active,
             parent=self,
-            use_mock=True  # Use mock for UI testing
+            use_mock=False  # Use mock for UI testing
         )
         self.thisDevice = UIDevice(self.node_id, self.transceiver)  # type: ignore
 
@@ -217,4 +217,3 @@ class ZigbeeTransceiver():
             print("race condition occurred")
         except:
             print("other error ocurred")
-
