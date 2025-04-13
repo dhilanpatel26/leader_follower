@@ -160,12 +160,12 @@ class ThisDevice(Device):
                 print("Device got deactivated by user")
                 self.active = False
                 self.leader = False  # essentially wipe data
-                self.send(Action = Action.OFF.value, payload=0, leader_id=0, follower_id=self.id)
+                self.send(action = Action.OFF.value, payload=0, leader_id=0, follower_id=self.id)
                 return False
             if self.received and self.received_action() == Action.ACTIVATE.value and self.received_follower_id():
                 print("Device got reactivated by user")
                 self.active = True
-                self.send(Action = Action.ON.value, payload=0, leader_id=0, follower_id=self.id)
+                self.send(action = Action.ON.value, payload=0, leader_id=0, follower_id=self.id)
                 self.make_follower()
                 return False  # wait for next cycle, prevents interpreting injection as device
             # if a new leader is recognized, move into tiebreak scenario
@@ -675,6 +675,7 @@ class ThisDevice(Device):
         """
         Main looping protocol for ThisDevice.
         """
+        self.device_list = DeviceList() 
         with self.outPath.open("w", encoding="utf-8", newline='') as self.file:
             # format is TIME, TYPE (STATUS, SENT, RECEIVED), CONTENT (<MSG>, <STATUS UPDATE>)
             self.csvWriter = csv.writer(self.file, dialect='excel')
