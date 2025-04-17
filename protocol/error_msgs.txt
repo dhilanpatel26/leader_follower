@@ -1,0 +1,18 @@
+(.venv) alexbattikha@Alexs-MacBook-Pro protocol % python3 ui.py
+suback
+Traceback (most recent call last):
+  File "/Users/alexbattikha/Desktop/dev/robotics/jhu-2024/leader_follower/protocol/ui.py", line 221, in <module>
+    asyncio.run(ui.main())
+  File "/opt/homebrew/Cellar/python@3.12/3.12.8/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.8/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.8/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 686, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/alexbattikha/Desktop/dev/robotics/jhu-2024/leader_follower/protocol/ui.py", line 86, in main
+    elif action == 3 and (self.devices[follow][0] == None):
+                          ~~~~~~~~~~~~^^^^^^^^
+KeyError: 5678
