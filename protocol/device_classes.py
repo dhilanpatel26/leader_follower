@@ -156,13 +156,13 @@ class ThisDevice(Device):
         end_time = time.time() + duration
         while time.time() < end_time:
             self.received = self.transceiver.receive(timeout=RECEIVE_TIMEOUT)
-            if self.received and self.received_action() == Action.DEACTIVATE.value and self.received_follower_id():
+            if self.received and self.received_action() == Action.DEACTIVATE.value and self.received_follower_id() == self.id:
                 print("Device got deactivated by user")
                 self.active = False
                 self.leader = False  # essentially wipe data
                 self.send(action = Action.OFF.value, payload=0, leader_id=0, follower_id=self.id)
                 return False
-            if self.received and self.received_action() == Action.ACTIVATE.value and self.received_follower_id():
+            if self.received and self.received_action() == Action.ACTIVATE.value and self.received_follower_id() == self.id:
                 print("Device got reactivated by user")
                 self.active = True
                 self.send(action = Action.ON.value, payload=0, leader_id=0, follower_id=self.id)
@@ -238,7 +238,7 @@ class ThisDevice(Device):
             self.make_leader()
             self.leader_id = self.id
             task = self.device_list.unused_tasks()[0]
-            self.device_list.add_device(id=self.id, task_index=task, thisDeviceId= self.id)  # put itself in devicelist with first task
+            self.device_list.add_device(id=self.id, task_index=task, thisDeviceId= self.id, leader=True)  # put itself in devicelist with first task
             self.leader_send_attendance()
 
     def leader_send_attendance(self):
@@ -361,13 +361,17 @@ class ThisDevice(Device):
         # only add devices which are not already in device list
         if self.received_follower_id() not in self.device_list.get_device_list().keys():
             self.log_status("ADDING " + str(self.received_follower_id()) + " TO DLIST")
-            self.device_list.add_device(id=self.received_follower_id(), task_index=self.received_payload(), thisDeviceId= self.id)
+            is_leader = self.received_follower_id() == self.received_leader_id()
+            self.device_list.add_device(id=self.received_follower_id(), task_index=self.received_payload(), thisDeviceId= self.id, leader=is_leader)
         # handle the rest of the list
         while self.receive(duration=0.5, action_value=Action.D_LIST.value):  # while still receiving D_LIST
             # only add new devices
             if self.received_follower_id() not in self.device_list.get_device_list().keys():
                 self.log_status("ADDING " + str(self.received_follower_id()) + " TO DLIST")
-                self.device_list.add_device(id=self.received_follower_id(), task_index=self.received_payload(), thisDeviceId= self.id)
+                is_leader = self.received_follower_id() == self.received_leader_id()
+                self.device_list.add_device(id=self.received_follower_id(), task_index=self.received_payload(), thisDeviceId= self.id, leader=is_leader)
+
+        # print(f"Current Device List: {self.device_list}")
 
     def follower_drop_disconnected(self):
         """
@@ -820,7 +824,7 @@ class DeviceList:
         output = ["DeviceList:"]
         for id, device in self.devices.items():
             task = device.get_task() if device.get_task() != 0 else "Reserve"
-            output.append(f"Device ID: {id}, Task: {task}")
+            output.append(f"Device ID: {id}, Task: {task}, Leader: {device.get_leader()}")
         return "\n\t".join(output)
 
     def __iter__(self):
@@ -862,7 +866,7 @@ class DeviceList:
         """
         self.task_options = list(range(num_tasks))
 
-    def add_device(self, id: int, task_index: int, thisDeviceId: int):
+    def add_device(self, id: int, task_index: int, thisDeviceId: int, leader: bool = False):
         """
         Creates Device object with id and task, stores in DeviceList.
         :param id: identifier for device, assigned to new Device object.
@@ -875,6 +879,8 @@ class DeviceList:
             if (id == thisDeviceId):
                 subprocess.Popen(["python3", "../RobotBase/MainThread.py", str(task)])
         device = Device(id)
+        if leader:
+            device.leader = True
         device.set_task(task)
         self.devices[id] = device
         #print("dlist", self.devices.keys())
