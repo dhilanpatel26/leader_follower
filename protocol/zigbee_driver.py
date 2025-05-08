@@ -9,7 +9,7 @@ import multiprocessing
 class ZigbeeDriver():
 
     async def main(self):
-        self.mac_id = getnode() % 10000
+        self.mac_id = 1111
         shared_active = multiprocessing.Value('i', 1)
         node = ZigbeeNode(self.mac_id, active= shared_active, ip='192.168.0.208')  # takes care of channel setup and looping (non-blocking)
 
