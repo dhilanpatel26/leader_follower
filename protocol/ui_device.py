@@ -134,7 +134,8 @@ class UIDevice(ThisDevice):
         print(f"Sending {action_name} command to device {device_id}")
         
         # Create message with appropriate action
-        msg = Message(action_value, 0, 0, device_id).msg
+        # msg = Message(action_value, 0, 0, device_id).msg
+        msg = Message(action_value, 0, self.leader_id, device_id).msg
 
         is_mock = hasattr(self.transceiver, 'sub_client') and hasattr(self.transceiver.sub_client, '__class__') and \
                 self.transceiver.sub_client.__class__.__name__ == 'MockMQTTClient'

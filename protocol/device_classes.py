@@ -800,9 +800,9 @@ class ThisDevice(Device):
                     self.receive(duration=2)  # waiting for reactivation
                     time.sleep(2)  # can slow down clock speed here
                     
-                    # check if subprocess is running and if so, then kill it / use bool
+                    # check if subprocess is running and if so, then kill it / use bool --> set MainThread subprocess as a static variable
                     subprocess.Popen(["python3", "/home/pi/Desktop/dev/leader_follower/RobotBase/tests/StopMotors.py", str(task)])
-                    
+
                     # TODO: more formal dynamic clock
                 
 
