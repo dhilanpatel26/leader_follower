@@ -20,7 +20,7 @@ export function MessageLog({ messages }: MessageLogProps) {
           <p>No messages</p>
         ) : (
           <ul className="divide-y">
-            {messages.map((msg, index) => (
+            {messages.slice().reverse().map((msg, index) => (
               <li key={index} className="py-2">
                 <p className={msg.type === 'sent' ? 'text-blue-600' : 'text-green-600'}>
                   {msg.type === 'sent' ? 'Sent' : 'Received'} - Action: {msg.action}
