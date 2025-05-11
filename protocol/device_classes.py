@@ -156,13 +156,13 @@ class ThisDevice(Device):
         end_time = time.time() + duration
         while time.time() < end_time:
             self.received = self.transceiver.receive(timeout=RECEIVE_TIMEOUT)
-            if self.received and self.received_action() == Action.DEACTIVATE.value and self.received_follower_id():
+            if self.received and self.received_action() == Action.DEACTIVATE.value and self.received_follower_id() == self.id:
                 print("Device got deactivated by user")
                 self.active = False
                 self.leader = False  # essentially wipe data
                 self.send(action = Action.OFF.value, payload=0, leader_id=0, follower_id=self.id)
                 return False
-            if self.received and self.received_action() == Action.ACTIVATE.value and self.received_follower_id():
+            if self.received and self.received_action() == Action.ACTIVATE.value and self.received_follower_id() == self.id:
                 print("Device got reactivated by user")
                 self.active = True
                 self.send(action = Action.ON.value, payload=0, leader_id=0, follower_id=self.id)

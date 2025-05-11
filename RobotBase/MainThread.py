@@ -255,7 +255,7 @@ class MainThread:
 
                         time.sleep(0.5)
                         self.handle_last_tag()
-                        time.sleep(5)
+                        time.sleep(2)
 
                         if current_tag == 1:
                             self.current_distance = self.map1dist
@@ -282,19 +282,17 @@ class MainThread:
                         if self.align_with_tag(current_tag):
                             time.sleep(0.5)
                             if self.quad:
-                                self.turn_right()
-                            else:
                                 self.turn_left()
+                            else:
+                                self.turn_right()
 
                             time.sleep(0.5)
 
                             if current_tag == 2:    
-                                self.lf_stop(1, True)
-                                self.lf_stop(1, True)
+                                self.lf_stop(1, False)
                             elif current_tag == 3:
-                                self.lf_stop(1, True)
-                                self.lf_stop(1, True)
-                                self.lf_stop(1, True)
+                                self.lf_stop(1, False)
+                                self.lf_stop(1, False)
 
                             # self.move_straight_reverse(self.current_distance)
                             time.sleep(0.5)
@@ -302,26 +300,22 @@ class MainThread:
                             if current_tag == 1:
                                 if (self.quad):
                                     time.sleep(1.0)
-                                    self.turn_left()
+                                    self.turn_right()
                                 elif (not self.quad):
                                     time.sleep(1.0)
-                                    self.turn_right()
+                                    self.turn_left()
                             elif current_tag == 2:
                                 if (self.quad):
-                                    self.turn_left()
                                     time.sleep(1.0)
-                                    self.turn_left()
                                 elif (not self.quad):
-                                    self.turn_right()
                                     time.sleep(1.0)
-                                    self.turn_right()
                             else:
                                 if (self.quad):
                                     time.sleep(1.0)
-                                    self.turn_right()
+                                    self.turn_left()
                                 elif (not self.quad):
                                     time.sleep(1.0)
-                                    self.turn_left()
+                                    self.turn_right()
                             
                             self.last_detected_tag = current_tag
 
@@ -339,6 +333,3 @@ if __name__ == '__main__':
 
     main = MainThread(quadrant_num)
     main.run()
-
-
-# return on q2
