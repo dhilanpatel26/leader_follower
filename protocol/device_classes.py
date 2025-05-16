@@ -160,12 +160,14 @@ class ThisDevice(Device):
                 print("Device got deactivated by user")
                 self.active = False
                 self.leader = False  # essentially wipe data
-                self.send(action = Action.OFF.value, payload=0, leader_id=0, follower_id=self.id)
+                # commented out on 5/15
+                # self.send(action = Action.OFF.value, payload=0, leader_id=0, follower_id=self.id)
                 return False
             if self.received and self.received_action() == Action.ACTIVATE.value and self.received_follower_id() == self.id:
                 print("Device got reactivated by user")
                 self.active = True
-                self.send(action = Action.ON.value, payload=0, leader_id=0, follower_id=self.id)
+                # commented out on 5/15
+                # self.send(action = Action.ON.value, payload=0, leader_id=0, follower_id=self.id)
                 self.make_follower()
                 return False  # wait for next cycle, prevents interpreting injection as device
             # if a new leader is recognized, move into tiebreak scenario
