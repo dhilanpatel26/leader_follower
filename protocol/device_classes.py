@@ -235,6 +235,7 @@ class ThisDevice(Device):
 
         if self.is_ui_device:
             self.make_follower()
+            self.follower_handle_attendance()
         else:
             print("Assuming position of leader")
             self.make_leader()
