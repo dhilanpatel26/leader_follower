@@ -235,7 +235,6 @@ class ThisDevice(Device):
 
         if self.is_ui_device:
             self.make_follower()
-            self.follower_handle_attendance()
         else:
             print("Assuming position of leader")
             self.make_leader()
@@ -777,6 +776,9 @@ class ThisDevice(Device):
                         # running on robots w/ Python < 3.10
                         if action == Action.ATTENDANCE.value:
                             # prevents deadlock between leader-follower first attendance state
+                            if self.is_ui_device and self.leader_id == None:
+                                self.follower_handle_attendance()
+                                self.numHeardDLIST = 0
                             if self.numHeardDLIST > 1 and self.device_list.find_device(self.id) is None:  # O(1) operation, quick
                                 self.follower_handle_attendance()
                                 self.numHeardDLIST = 0
