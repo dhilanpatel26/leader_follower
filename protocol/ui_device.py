@@ -25,8 +25,8 @@ class UIDevice(ThisDevice):
     def start_ws_server(self):
         """Start WebSocket server in a separate thread"""
         async def start_server():
-            async with websockets.serve(self.ws_handler, "0.0.0.0", 8765):
-                print(f"WebSocket server started on port 8765")
+            async with websockets.serve(self.ws_handler, "0.0.0.0", 8080):
+                print(f"WebSocket server started on port 8080")
                 await asyncio.Future()  # Run forever
         
         try:
