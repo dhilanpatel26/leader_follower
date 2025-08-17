@@ -732,12 +732,14 @@ class ThisDevice(Device):
                     if not self.get_leader():
                         #self.transceiver.log("FOLLOWER")
                         #print("Device:", self.id, self.leader, "\n", self.device_list)
-                        if not self.receive(duration=TAKEOVER_DURATION) and not self.is_ui_device:
+                        if not self.receive(duration=TAKEOVER_DURATION):
                             print("Is there anybody out there?")
                             self.device_list.remove_device(id=self.leader_id)
-                            self.leader_id = self.id
-                            self.make_leader()
-                            continue
+                            self.leader_id = self.device_list.get_highest_id().id
+                            if not self.is_ui_device and self.leader_id == self.id:
+                                self.device_list.find_device(self.id).leader = True
+                                self.make_leader()
+                                continue
                         elif self.received and self.leader_id and abs(self.received_leader_id() - self.leader_id)  > PRECISION_ALLOWANCE:  # account for loss of precision
                             # print(self.received_leader_id())
                             # print(self.leader_id)
@@ -895,7 +897,7 @@ class DeviceList:
         self.devices[id] = device
         #print("dlist", self.devices.keys())
 
-    def find_device(self, id: int) -> int :
+    def find_device(self, id: int) -> Device :
         """
         Finds Device object with target id in DeviceList.
         :param id: identifier for target device.
@@ -950,7 +952,7 @@ class DeviceList:
                 task = 0
             self.devices[id].set_task(task)
 
-    def get_highest_id(self):
+    def get_highest_id(self) -> Device:
         """
         Gets Device with the largest id, used for leader takeover and tiebreaker.
         :return: Device object with the largest id
