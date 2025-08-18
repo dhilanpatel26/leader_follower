@@ -735,7 +735,8 @@ class ThisDevice(Device):
                         if not self.receive(duration=TAKEOVER_DURATION):
                             print("Is there anybody out there?")
                             self.device_list.remove_device(id=self.leader_id)
-                            self.leader_id = self.device_list.get_highest_id().id
+                            highest_device = self.device_list.get_highest_id()
+                            self.leader_id = highest_device.id if not type(highest_device) == type(None) else None
                             if not self.is_ui_device and self.leader_id == self.id:
                                 self.device_list.find_device(self.id).leader = True
                                 self.make_leader()
