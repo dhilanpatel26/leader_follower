@@ -159,7 +159,7 @@ class LineFollowing:
                 self.car.set_velocity(-35, 90, -angular_velocity)
     def turn_right(self):
         sensor_data = self.line.readData()
-        self.car.set_velocity(0, 90, 0.5)
+        self.car.set_velocity(0, 90, 0.3)
         time.sleep(0.58)
         while sensor_data[1] != 1:
             sensor_data = self.line.readData()
@@ -169,7 +169,7 @@ class LineFollowing:
         
     def turn_left(self):
         sensor_data = self.line.readData()
-        self.car.set_velocity(0, 90, -0.5)
+        self.car.set_velocity(0, 90, -0.3)
         time.sleep(0.58)
         while sensor_data[2] != 1:
             sensor_data = self.line.readData()

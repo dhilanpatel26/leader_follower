@@ -809,7 +809,7 @@ class ThisDevice(Device):
                     
                     # check if subprocess is running and if so, then kill it / use bool --> set MainThread subprocess as a static variable
                     self.device_list.robot_process.kill()
-                    subprocess.Popen(["python3", "/home/pi/Desktop/dev/leader_follower/RobotBase/tests/StopMotors.py"])
+                    subprocess.Popen(["python3", "/home/pi/Desktop/leader_follower/RobotBase/tests/StopMotors.py"])
 
                     # TODO: more formal dynamic clock
                 
@@ -889,7 +889,7 @@ class DeviceList:
 
             # call to MainThread.py
             if (id == thisDeviceId):
-                self.robot_process = subprocess.Popen(["python3", "/home/pi/Desktop/dev/leader_follower/RobotBase/MainThread.py", str(task)])
+                self.robot_process = subprocess.Popen(["python3", "/home/pi/Desktop/leader_follower/RobotBase/MainThread.py", str(task)])
         device = Device(id)
         if leader:
             device.leader = True
