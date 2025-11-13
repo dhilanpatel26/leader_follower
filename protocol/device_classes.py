@@ -473,8 +473,10 @@ class ThisDevice(Device):
                             self.device_list.remove_device(id=self.leader_id)
                             highest_device = self.device_list.get_highest_id()
                             self.leader_id = highest_device.id if not type(highest_device) == type(None) else None
+                            print(self.leader_id)
+                            if self.leader_id != None:
+                                self.device_list.find_device(self.leader_id).leader == True
                             if not self.is_ui_device and self.leader_id == self.id:
-                                self.device_list.find_device(self.id).leader = True
                                 self.make_leader()
                                 continue
                             '''
