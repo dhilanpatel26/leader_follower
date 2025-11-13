@@ -231,7 +231,7 @@ class ThisDevice(Device):
             self.make_leader()
             self.leader_id = self.id
             task = self.device_list.unused_tasks()[0]
-            self.device_list.add_device(id=self.id, task_index=task, thisDeviceId= self.id, leader=True)  # put itself in devicelist with first task
+            self.device_list.add_device(id=self.id, task=task, thisDeviceId= self.id, leader=True)  # put itself in devicelist with first task
             self.leader_send_attendance()
 
     def leader_send_attendance(self):
@@ -254,7 +254,7 @@ class ThisDevice(Device):
                 task = unused_tasks[0] if len(unused_tasks) != 0 else 0
                 print("Leader picked up device", self.received_follower_id())
                 self.log_status("PICKED UP DEVICE " + str(self.received_follower_id()))
-                self.device_list.add_device(id=self.received_follower_id(), task_index=task, thisDeviceId= self.id)  # has not assigned task yet
+                self.device_list.add_device(id=self.received_follower_id(), task=task, thisDeviceId= self.id)  # has not assigned task yet
 
     def leader_send_device_list(self):
         """
@@ -355,14 +355,14 @@ class ThisDevice(Device):
         if self.received_follower_id() not in self.device_list.get_device_list().keys():
             self.log_status("ADDING " + str(self.received_follower_id()) + " TO DLIST")
             is_leader = self.received_follower_id() == self.received_leader_id()
-            self.device_list.add_device(id=self.received_follower_id(), task_index=self.received_payload(), thisDeviceId= self.id, leader=is_leader)
+            self.device_list.add_device(id=self.received_follower_id(), task=self.received_payload(), thisDeviceId= self.id, leader=is_leader)
         # handle the rest of the list
         while self.receive(duration=0.5, action_value=Action.D_LIST.value):  # while still receiving D_LIST
             # only add new devices
             if self.received_follower_id() not in self.device_list.get_device_list().keys():
                 self.log_status("ADDING " + str(self.received_follower_id()) + " TO DLIST")
                 is_leader = self.received_follower_id() == self.received_leader_id()
-                self.device_list.add_device(id=self.received_follower_id(), task_index=self.received_payload(), thisDeviceId= self.id, leader=is_leader)
+                self.device_list.add_device(id=self.received_follower_id(), task=self.received_payload(), thisDeviceId= self.id, leader=is_leader)
 
         # print(f"Current Device List: {self.device_list}")
 
@@ -400,7 +400,7 @@ class ThisDevice(Device):
                 print("Unused tasks: ", unused_tasks)
                 task = unused_tasks[0] if unused_tasks else 0
                 print("Leader picked up device", otherLeader)
-                self.device_list.add_device(id=otherLeader, task_index=task, thisDeviceId= self.id)  # has not assigned task yet
+                self.device_list.add_device(id=otherLeader, task=task, thisDeviceId= self.id)  # has not assigned task yet
         else:
             print('here')
     
@@ -616,15 +616,14 @@ class DeviceList:
         """
         return set(self.devices.values())
 
-    def add_device(self, id: int, task_index: int, thisDeviceId: int, leader: bool = False):
+    def add_device(self, id: int, task: int, thisDeviceId: int, leader: bool = False):
         """
         Creates Device object with id and task, stores in DeviceList.
         :param id: identifier for device, assigned to new Device object.
         :param task_index: index of task for device, assigned to new Device object.
         """
         device = Device(id)
-        if 1 <= task_index <= 4:
-            task = task_index
+        if 1 <= task <= 4:
             self.task_options[task] = device
             # call to MainThread.py
             if (id == thisDeviceId):
