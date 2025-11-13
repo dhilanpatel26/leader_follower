@@ -474,7 +474,7 @@ class ThisDevice(Device):
                             highest_device = self.device_list.get_highest_id()
                             self.leader_id = highest_device.id if not type(highest_device) == type(None) else None
                             if not self.is_ui_device and self.leader_id == self.id:
-                                #self.device_list.find_device(self.id).leader = True
+                                self.device_list.find_device(self.id).leader = True
                                 self.make_leader()
                                 continue
                             '''
