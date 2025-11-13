@@ -105,7 +105,7 @@ class ThisDevice(Device):
         :param id: identifier for ThisDevice, either pre-specified or randomly generated.
         """
         super().__init__(id)
-        self.leader: bool = True  # start ThisDevice as leader then change accordingly in setup
+        #self.leader: bool = True  # start ThisDevice as leader then change accordingly in setup
         self.device_list: DeviceList = DeviceList()  # default sizing
         self.leader_id: int  = None
         self.leader_started_operating: float = None
@@ -398,7 +398,7 @@ class ThisDevice(Device):
             if self.leader and (otherLeader not in self.device_list.get_ids()):
                 unused_tasks = self.device_list.unused_tasks()
                 print("Unused tasks: ", unused_tasks)
-                task = unused_tasks[0] if unused_tasks else 0
+                task = unused_tasks[0] if len(unused_tasks) != 0 else 0
                 print("Leader picked up device", otherLeader)
                 self.device_list.add_device(id=otherLeader, task=task, thisDeviceId= self.id)  # has not assigned task yet
         else:
@@ -474,7 +474,7 @@ class ThisDevice(Device):
                             highest_device = self.device_list.get_highest_id()
                             self.leader_id = highest_device.id if not type(highest_device) == type(None) else None
                             if not self.is_ui_device and self.leader_id == self.id:
-                                self.device_list.find_device(self.id).leader = True
+                                #self.device_list.find_device(self.id).leader = True
                                 self.make_leader()
                                 continue
                             '''
