@@ -3,3 +3,4 @@ __pycache__/
 output/
 protocol/zigbee2mqtt-data/log/
 .vscode/
+venv/
