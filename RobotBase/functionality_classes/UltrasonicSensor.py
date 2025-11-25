@@ -15,7 +15,7 @@ sys.path.append(os.path.join(current_dir, 'functionality_classes'))
 
 from functionality_classes.ColorSensingMove import ColorSensingMove
 from functionality_classes.PureColorSensor import PureColorSensor
-# from leader_follower.RobotBase.TurboPi.Camera import Camera
+#from leader_follower.RobotBase.TurboPi.Camera import Camera
 
 
 class Sonar:
