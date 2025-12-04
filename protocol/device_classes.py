@@ -336,6 +336,7 @@ class ThisDevice(Device):
         Called after follower has received check-in message. Responds with same message.
         """
         print("Follower responding to check-in")
+        print(self.robot_process.communicate())
         self.log_status("RESPONDING TO CHECKIN")
         self.send(action=Action.CHECK_IN_RESPONSE.value, payload=0, leader_id=self.leader_id, follower_id=self.id, duration=2)
         # sending and receiving is along different channels for Transceiver, so this should not be a problem
@@ -629,7 +630,7 @@ class DeviceList:
             self.task_options[task] = device
             # call to MainThread.py
             if (id == thisDeviceId):
-                self.robot_process = subprocess.Popen(["python3", "/home/pi/Desktop/leader_follower/RobotBase/MainThread.py", str(task)])
+                self.robot_process = subprocess.Popen(["python3", "/home/pi/Desktop/leader_follower/RobotBase/MainThread.py", str(task)], stdout=subprocess.PIPE, text=True)
         device = Device(id)
         if leader:
             device.leader = True
