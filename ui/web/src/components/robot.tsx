@@ -53,7 +53,7 @@ const RobotNode: React.FC<NodeProps> = ({ node }) => {
     >
       {node.id}
       <div style={{ position: 'absolute', top: '-20px', fontSize: '12px', color: 'black' }}>
-        {node.task && `Task: ${node.task}`}
+        {parseInt(node.task) > 0 && `Task: ${node.task}`}
       </div>
       {node.status === 'inactive' && (
         <div style={{ 

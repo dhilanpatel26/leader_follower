@@ -14,18 +14,36 @@ const TrackBox: React.FC<TrackBoxProps> = ({ className, onCellClick, devices }) 
     2: null,
     3: null,
     4: null,
-    5: null,
+    5: null
+  });
+
+  const [reservePositions, setReservePositions] = useState<Record<number, DeviceInfo | null>>({
+    1: null,
+    2: null,
+    3: null,
+    4: null,
   });
 
   useEffect(() => {
     const newPositions: Record<number, DeviceInfo | null> = {1: null, 2: null, 3: null, 4: null, 5: null};
+    const newReserves: Record<number, DeviceInfo | null> = {1: null, 2: null, 3: null, 4: null, 5: null};
+    
+    let numReserves: number;
+    numReserves = 0;
 
     devices.forEach(device => {
-      const position = device.task ? parseInt(device.task) : 5; // 5 is the "sleeping" position
-      newPositions[position] = device;
+      const position = parseInt(device.task); // 5 is the "sleeping" position
+      if (position === 0) {
+        numReserves += 1;
+        newReserves[numReserves] = device;
+      } else {
+        newPositions[position] = device;
+      }
+      
     });
 
     setRobotPositions(newPositions);
+    setReservePositions(newReserves);
   }, [devices]);
 
   const containerStyle: React.CSSProperties = {
@@ -45,16 +63,15 @@ const TrackBox: React.FC<TrackBoxProps> = ({ className, onCellClick, devices }) 
     maxWidth: '100%',
   };
 
-  const loadingDockStyle: React.CSSProperties = {
-    width: '100px',
-    height: '100px',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+  const reserveGridStyle: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: '1fr',
+    gridTemplateRows: '1fr 1fr 1fr 1fr',
+    width: '150px',
+    height: '300px',
+    maxWidth: '100%',
     border: '1px solid #ccc',
-    borderRadius: '4px',
-    position: 'relative',
+    borderRadius: '4px'
   };
 
   const cellStyle: React.CSSProperties = {
@@ -70,11 +87,32 @@ const TrackBox: React.FC<TrackBoxProps> = ({ className, onCellClick, devices }) 
     transition: 'background-color 0.2s',
     position: 'relative',
   };
+
+  const reserveCellStyle: React.CSSProperties = {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: '4px',
+    fontSize: '24px',
+    fontWeight: 'bold',
+    cursor: onCellClick ? 'pointer' : 'default',
+    transition: 'background-color 0.2s',
+    position: 'relative',
+  };
   
   const cellNumberStyle: React.CSSProperties = {
     position: 'absolute',
     top: '5px',
     left: '5px',
+    fontSize: '22px',
+    color: '#666',
+    zIndex: 1,
+  };
+
+  const reserveNumberStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: '-30px',
     fontSize: '22px',
     color: '#666',
     zIndex: 1,
@@ -114,26 +152,32 @@ const TrackBox: React.FC<TrackBoxProps> = ({ className, onCellClick, devices }) 
         ))}
       </div>
       
-      {/* Loading dock (position 5) */}
-      <div 
-        style={loadingDockStyle}
-        onClick={() => handleCellClick(5)}
-      >
-        <span style={cellNumberStyle}>5</span>
-        {robotPositions[5] && (
-          <div style={{ position: 'absolute' }}>
-            <RobotNode 
-              node={{
-                id: robotPositions[5]?.id || '',
-                role: robotPositions[5]?.leader ? 'leader' : robotPositions[5]?.leader == null ? 'ui' : 'follower',
-                status: robotPositions[5]?.missed > 0 ? 'inactive' : 'active',
-                task: robotPositions[5]?.task,
-                missed: robotPositions[5]?.missed
-              }} 
-            />
+      {/* Reserves 4x1 grid (max 4 reserves) */}
+      <div style={reserveGridStyle}>
+        {[1, 2, 3, 4].map(cellNumber => (
+          <div 
+            key={cellNumber}
+            style={reserveCellStyle} 
+            onClick={() => handleCellClick(cellNumber)}
+          >
+            <span style={reserveNumberStyle}>{cellNumber === 1 ? 'Reserves' : ''}</span>
+            {reservePositions[cellNumber] && (
+              <div style={{ position: 'absolute' }}>
+                <RobotNode 
+                  node={{
+                    id: reservePositions[cellNumber]?.id || '',
+                    role: reservePositions[cellNumber]?.leader ? 'leader' : 'follower',
+                    status: reservePositions[cellNumber]?.missed > 0 ? 'inactive' : 'active',
+                    task: reservePositions[cellNumber]?.task,
+                    missed: reservePositions[cellNumber]?.missed
+                  }} 
+                />
+              </div>
+            )}
           </div>
-        )}
+        ))}
       </div>
+      
     </div>
   );
 };

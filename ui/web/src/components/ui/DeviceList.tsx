@@ -17,7 +17,7 @@ export function DeviceList({ devices }: DeviceListProps) {
               <li key={device.id} className="py-2">
                 <p>ID: <span className="font-mono">{device.id}</span></p>
                 <p>Role: {device.leader ? 'Leader' : 'Follower'}</p>
-                {device.task && <p>Task: {device.task}</p>}
+                <p>Task: {device.task === 0 ? 'Reserve' : device.task}</p>
                 <p>Missed: {device.missed}</p>
               </li>
             ))}
