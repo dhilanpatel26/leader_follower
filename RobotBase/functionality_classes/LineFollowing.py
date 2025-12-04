@@ -107,9 +107,12 @@ class LineFollowing:
             Board.RGB.setPixelColor(1, Board.PixelColor(0, 0, 0))
             Board.RGB.show()
 
-    def move(self, num, reverse):
+    def move(self, num, reverse, fixed=0):
         self.prevTriggered = False
         
+        if fixed != 0:
+            end_time = time.time() + fixed
+            
         while self.__isRunning:
             if self.turn_event.is_set():  # Check if turning is needed
                 if reverse == False:
@@ -121,7 +124,11 @@ class LineFollowing:
 
             sensor_data = self.line.readData()
             #print(f"Sensor data: {sensor_data}")
-
+            
+            if fixed != 0 and time.time() > end_time:
+                angular_velocity = 0
+                return
+            
             if sensor_data == [1, 1, 1, 1]:
                 if not self.prevTriggered:
                     self.lfTrigger += 1
@@ -150,7 +157,26 @@ class LineFollowing:
                 self.car.set_velocity(35, 90, angular_velocity)
             elif reverse == True:
                 self.car.set_velocity(-35, 90, -angular_velocity)
-
+    def turn_right(self):
+        sensor_data = self.line.readData()
+        self.car.set_velocity(0, 90, 0.3)
+        time.sleep(0.58)
+        while sensor_data[1] != 1:
+            sensor_data = self.line.readData()
+            
+        #time.sleep(0.8) # rpi1: 0.55; 11/20: 0.58
+        self.car.set_velocity(0, 90, 0)
+        
+    def turn_left(self):
+        sensor_data = self.line.readData()
+        self.car.set_velocity(0, 90, -0.3)
+        time.sleep(0.58)
+        while sensor_data[2] != 1:
+            sensor_data = self.line.readData()
+            
+        #time.sleep(0.8) # rpi1: 0.55; 11/20: 0.58
+        self.car.set_velocity(0, 90, 0)
+        
     def perform_turn(self):
         print("Performing turn...")
         self.car.set_velocity(0, 90, -0.5)  # Adjust the turning speed and direction as needed

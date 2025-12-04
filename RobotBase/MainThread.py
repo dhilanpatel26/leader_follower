@@ -40,8 +40,8 @@ class MainThread:
         self.stop_signal = False
         self.detected_tag_after_turn = None
         self.last_detected_tag = 0
-        self.mapSelection = [1, 2, 3]
-        self.map1dist = 1
+        self.mapSelection = [1, 2, 4]
+        self.map1dist = 0
         self.map2dist = 12
         self.map3dist = 20
         self.current_distance = 0
@@ -61,71 +61,134 @@ class MainThread:
     # called from MessageNav to move robot to correct quadrant and begin tasks (note: assuming all robots start in the same position)
     def move_to_quad_lf(self, quad_num):
         if quad_num == 1:
-            self.move_straight(9.5)
+            self.move_straight(12)
+            time.sleep(0.2)
+            self.lf_stop(1, False)
+            time.sleep(0.2)
+            self.lf_stop(1, False)
+            time.sleep(0.2)
+            self.lf_stop(1, False, 0.5)
             time.sleep(0.2)
             self.turn_right()
             time.sleep(0.2)
-            self.move_straight(4)
-            time.sleep(2)
             self.lf_stop(1, False)
-            time.sleep(2)
-            self.lf_stop(1, False)
-            time.sleep(2)
+            time.sleep(0.2)
+            self.lf_stop(1, False, 0.5)
+            time.sleep(0.2)
             self.turn_right()
-            time.sleep(0.2)
-            self.move_straight(8)
-            time.sleep(0.2)
-            self.move_straight_reverse(12)
+            time.sleep(1)
+            self.turn_right()
             time.sleep(0.5)
         elif quad_num == 2:
-            self.move_straight(9.5)
-            time.sleep(2)
+            self.move_straight(12)
+            time.sleep(0.2)
+            self.lf_stop(1, False, 0.5)
+            time.sleep(0.2)
+            self.turn_right()
+            time.sleep(0.2)
             self.lf_stop(1, False)
-            time.sleep(2)
-            self.lf_stop(1, False)
-            time.sleep(2)
+            time.sleep(0.2)
+            self.lf_stop(1, False, 0.5)
+            time.sleep(0.2)
             self.turn_left()
             time.sleep(0.2)
-            self.move_straight(7)
+            self.lf_stop(1, False)
             time.sleep(0.2)
-            self.move_straight_reverse(11.2)
+            self.lf_stop(1, False)
+            time.sleep(0.2)
+            self.lf_stop(1, False, 0.5)
+            time.sleep(0.2)
+            self.turn_left()
+            time.sleep(0.2)
+            self.lf_stop(1, False)
+            time.sleep(0.2)
+            self.lf_stop(1, False, 0.5)
+            time.sleep(0.2)
+            self.turn_left()
+            time.sleep(1)
+            self.turn_left()
             time.sleep(0.5)
         elif quad_num == 3:
-            self.move_straight(9.5)
-            time.sleep(2)
+            self.move_straight(12)
+            time.sleep(0.2)
             self.lf_stop(1, False)
-            self.turn_left()
             time.sleep(0.2)
-            self.move_straight(5)
+            self.lf_stop(1, False, 0.5)
             time.sleep(0.2)
-            self.move_straight_reverse(14)
+            self.turn_right()
+            time.sleep(0.2)
+            self.lf_stop(1, False)
+            time.sleep(0.2)
+            self.lf_stop(1, False, 0.5)
+            time.sleep(0.2)
+            self.turn_right()
+            time.sleep(1)
+            self.turn_right()
             time.sleep(0.5)
         elif quad_num == 4:
-            self.move_straight(9.5)
+            self.move_straight(12)
+            time.sleep(0.2)
+            self.lf_stop(1, False, 0.5)
             time.sleep(0.2)
             self.turn_right()
             time.sleep(0.2)
-            self.move_straight(4)
-            time.sleep(2)
             self.lf_stop(1, False)
             time.sleep(0.2)
-            self.turn_right()
+            self.lf_stop(1, False, 0.5)
             time.sleep(0.2)
-            self.move_straight(10)
+            self.turn_left()
             time.sleep(0.2)
-            self.move_straight_reverse(12)
+            self.lf_stop(1, False)
+            time.sleep(0.2)
+            self.lf_stop(1, False, 0.5)
+            time.sleep(0.2)
+            self.turn_left()
+            time.sleep(0.2)
+            self.lf_stop(1, False)
+            time.sleep(0.2)
+            self.lf_stop(1, False, 0.5)
+            time.sleep(0.2)
+            self.turn_left()
+            time.sleep(1)
+            self.turn_left()
             time.sleep(0.5)
         
         print(f"Navigated to Quadrant {quad_num}")
         
         self.run()
 
-    def lf_stop(self, num, reverse):
+    def lf_stop(self, num, reverse, fixed=0):
         self.line_follower.start()
 
         while True:
             sensor_data = self.line_follower.line.readData()
-            self.line_follower.move(num, reverse) # this stops running when all chanels are triggered
+            self.line_follower.move(num, reverse, fixed) # this stops running when all chanels are triggered
+            time.sleep(0.05)  
+            break
+
+        self.car.set_velocity(0,0,0)
+        print("Completed Line Following")
+        time.sleep(2)
+    
+    def lf_turn_right(self):
+        self.line_follower.start()
+
+        while True:
+            sensor_data = self.line_follower.line.readData()
+            self.line_follower.turn_right() # this stops running when all chanels are triggered
+            time.sleep(0.05)  
+            break
+
+        self.car.set_velocity(0,0,0)
+        print("Completed Line Following")
+        time.sleep(2)
+        
+    def lf_turn_left(self):
+        self.line_follower.start()
+
+        while True:
+            sensor_data = self.line_follower.line.readData()
+            self.line_follower.turn_left() # this stops running when all chanels are triggered
             time.sleep(0.05)  
             break
 
@@ -159,13 +222,13 @@ class MainThread:
         self.car.set_velocity(0, 90, 0) 
 
     def turn_right(self):
-        self.car.set_velocity(0, 90, 0.55) 
-        time.sleep(0.58) # rpi1: 0.55; 11/20: 0.58
+        self.car.set_velocity(0, 90, 0.85) 
+        time.sleep(0.85) # rpi1: 0.55; 11/20: 0.58
         self.car.set_velocity(0, 90, 0)
 
     def turn_left(self):
-        self.car.set_velocity(0, 90, -0.52)  
-        time.sleep(0.58) # rpi1: 0.55; 11/20: 0.61
+        self.car.set_velocity(0, 90, -0.85)  
+        time.sleep(0.68) # rpi1: 0.55; 11/20: 0.61
         self.car.set_velocity(0, 90, 0)  
 
     def handle_last_tag(self):
@@ -190,7 +253,7 @@ class MainThread:
                 self.turn_left()
                 time.sleep(1.0)
                 self.turn_left()
-        elif (self.last_detected_tag == 3):
+        elif (self.last_detected_tag == 4):
             if (self.quad):
                 self.turn_left()
             elif (not self.quad):
@@ -245,6 +308,9 @@ class MainThread:
             try:
                 self.quadrant_init(self.quadrant_num)
                 while self.running:
+                    print("task")
+                    time.sleep(5)
+                    '''
                     for map in range(len(self.mapSelection)):
                         if self.stop_signal:
 
@@ -257,15 +323,9 @@ class MainThread:
                         self.handle_last_tag()
                         time.sleep(2)
 
-                        if current_tag == 1:
-                            self.current_distance = self.map1dist
-                            self.move_straight(self.current_distance)
-                            #self.lf_stop(1)
-                        elif current_tag == 2:
-                            self.current_distance = self.map2dist
+                        if current_tag == 2:
                             self.lf_stop(1, False)
-                        elif current_tag == 3:
-                            self.current_distance = self.map3dist
+                        elif current_tag == 4:
                             self.lf_stop(1, False)
                             self.lf_stop(1, False)
 
@@ -290,7 +350,7 @@ class MainThread:
 
                             if current_tag == 2:    
                                 self.lf_stop(1, False)
-                            elif current_tag == 3:
+                            elif current_tag == 4:
                                 self.lf_stop(1, False)
                                 self.lf_stop(1, False)
 
@@ -320,6 +380,7 @@ class MainThread:
                             self.last_detected_tag = current_tag
 
                             time.sleep(2.5)
+                        '''
 
             except KeyboardInterrupt:
                 self.running = False
