@@ -60,98 +60,90 @@ class MainThread:
     
     # called from MessageNav to move robot to correct quadrant and begin tasks (note: assuming all robots start in the same position)
     def move_to_quad_lf(self, quad_num):
+        # move forward till first line found
+        # pause for placement, REMOVE LATER
+        #time.sleep(5)
+        self.lf_stop(1, False)
+        time.sleep(0.2)
+        self.lf_stop(1, False, 0.25)
+        time.sleep(0.2)
+        # quadrant 1
         if quad_num == 1:
-            self.move_straight(12)
+            # navigate to left line
+            self.turn_left()
             time.sleep(0.2)
             self.lf_stop(1, False)
             time.sleep(0.2)
+            self.lf_stop(1, False, 0.25)
+            time.sleep(0.2)
+            self.turn_right()
+            time.sleep(0.2)
+            # navigate to quad 1 stop line
             self.lf_stop(1, False)
             time.sleep(0.2)
-            self.lf_stop(1, False, 0.5)
+            self.lf_stop(1, False, 0.25)
             time.sleep(0.2)
+            # turn to quadrant
             self.turn_right()
             time.sleep(0.2)
-            self.lf_stop(1, False)
-            time.sleep(0.2)
-            self.lf_stop(1, False, 0.5)
-            time.sleep(0.2)
-            self.turn_right()
-            time.sleep(1)
-            self.turn_right()
-            time.sleep(0.5)
         elif quad_num == 2:
-            self.move_straight(12)
+            # navigate to left line
+            self.turn_left()
             time.sleep(0.2)
-            self.lf_stop(1, False, 0.5)
+            self.lf_stop(1, False)
+            time.sleep(0.2)
+            self.lf_stop(1, False, 0.25)
             time.sleep(0.2)
             self.turn_right()
             time.sleep(0.2)
-            self.lf_stop(1, False)
-            time.sleep(0.2)
-            self.lf_stop(1, False, 0.5)
-            time.sleep(0.2)
-            self.turn_left()
-            time.sleep(0.2)
+            # navigate to quad 2 stop line
             self.lf_stop(1, False)
             time.sleep(0.2)
             self.lf_stop(1, False)
             time.sleep(0.2)
-            self.lf_stop(1, False, 0.5)
+            self.lf_stop(1, False, 0.25)
             time.sleep(0.2)
-            self.turn_left()
+            # turn to quadrant
+            self.turn_right()
             time.sleep(0.2)
-            self.lf_stop(1, False)
-            time.sleep(0.2)
-            self.lf_stop(1, False, 0.5)
-            time.sleep(0.2)
-            self.turn_left()
-            time.sleep(1)
-            self.turn_left()
-            time.sleep(0.5)
         elif quad_num == 3:
-            self.move_straight(12)
-            time.sleep(0.2)
-            self.lf_stop(1, False)
-            time.sleep(0.2)
-            self.lf_stop(1, False, 0.5)
-            time.sleep(0.2)
+            # navigate to right line
             self.turn_right()
             time.sleep(0.2)
             self.lf_stop(1, False)
             time.sleep(0.2)
-            self.lf_stop(1, False, 0.5)
+            self.lf_stop(1, False, 0.25)
             time.sleep(0.2)
-            self.turn_right()
-            time.sleep(1)
-            self.turn_right()
-            time.sleep(0.5)
+            self.turn_left()
+            time.sleep(0.2)
+            # navigate to quad 3 stop line
+            self.lf_stop(1, False)
+            time.sleep(0.2)
+            self.lf_stop(1, False, 0.25)
+            time.sleep(0.2)
+            # turn to quadrant
+            self.turn_left()
+            time.sleep(0.2)
         elif quad_num == 4:
-            self.move_straight(12)
-            time.sleep(0.2)
-            self.lf_stop(1, False, 0.5)
-            time.sleep(0.2)
+            # navigate to right line
             self.turn_right()
             time.sleep(0.2)
             self.lf_stop(1, False)
             time.sleep(0.2)
-            self.lf_stop(1, False, 0.5)
+            self.lf_stop(1, False, 0.25)
             time.sleep(0.2)
             self.turn_left()
+            time.sleep(0.2)
+            # navigate to quad 4 stop line
+            self.lf_stop(1, False)
             time.sleep(0.2)
             self.lf_stop(1, False)
             time.sleep(0.2)
-            self.lf_stop(1, False, 0.5)
+            self.lf_stop(1, False, 0.25)
             time.sleep(0.2)
+            # turn to quadrant
             self.turn_left()
             time.sleep(0.2)
-            self.lf_stop(1, False)
-            time.sleep(0.2)
-            self.lf_stop(1, False, 0.5)
-            time.sleep(0.2)
-            self.turn_left()
-            time.sleep(1)
-            self.turn_left()
-            time.sleep(0.5)
         
         print(f"Navigated to Quadrant {quad_num}")
         
@@ -223,12 +215,12 @@ class MainThread:
 
     def turn_right(self):
         self.car.set_velocity(0, 90, 0.85) 
-        time.sleep(0.85) # rpi1: 0.55; 11/20: 0.58
+        time.sleep(0.61) # rpi1: 0.55; 11/20: 0.58
         self.car.set_velocity(0, 90, 0)
 
     def turn_left(self):
         self.car.set_velocity(0, 90, -0.85)  
-        time.sleep(0.68) # rpi1: 0.55; 11/20: 0.61
+        time.sleep(0.61) # rpi1: 0.55; 11/20: 0.61
         self.car.set_velocity(0, 90, 0)  
 
     def handle_last_tag(self):
