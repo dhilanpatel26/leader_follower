@@ -16,9 +16,9 @@ export function DeviceList({ devices }: DeviceListProps) {
             {devices.map(device => (
               <li key={device.id} className="py-2">
                 <p>ID: <span className="font-mono">{device.id}</span></p>
-                <p>Role: {device.leader ? 'Leader' : 'Follower'}</p>
-                <p>Task: {device.task === 0 ? 'Reserve' : device.task}</p>
-                <p>Missed: {device.missed}</p>
+                <p>Role: {device.task === 5 ? 'Inactive' : device.leader ? 'Leader' : 'Follower'}</p>
+                <p>Task: {device.task === 5 ? 'n/a' : device.task}</p>
+                <p>Missed: {device.task === 5 ? 'n/a' : device.missed}</p>
               </li>
             ))}
           </ul>

@@ -14,7 +14,6 @@ const TrackBox: React.FC<TrackBoxProps> = ({ className, onCellClick, devices }) 
     2: null,
     3: null,
     4: null,
-    5: null
   });
 
   const [reservePositions, setReservePositions] = useState<Record<number, DeviceInfo | null>>({
@@ -23,19 +22,40 @@ const TrackBox: React.FC<TrackBoxProps> = ({ className, onCellClick, devices }) 
     3: null,
     4: null,
   });
+  
+  const [inactivePositions, setInactivePositions] = useState<Record<number, DeviceInfo | null>>({
+    1: null,
+    2: null,
+    3: null,
+    4: null,
+    5: null,
+    6: null,
+    7: null,
+    8: null,
+  });
+
+
+
+  
 
   useEffect(() => {
-    const newPositions: Record<number, DeviceInfo | null> = {1: null, 2: null, 3: null, 4: null, 5: null};
-    const newReserves: Record<number, DeviceInfo | null> = {1: null, 2: null, 3: null, 4: null, 5: null};
-    
+    const newPositions: Record<number, DeviceInfo | null> = {1: null, 2: null, 3: null, 4: null};
+    const newReserves: Record<number, DeviceInfo | null> = {1: null, 2: null, 3: null, 4: null};
+    const newInactive: Record<number, DeviceInfo | null> = {1: null, 2: null, 3: null, 4: null, 5: null, 6: null, 7: null, 8: null};
+
     let numReserves: number;
     numReserves = 0;
+    let numInactive: number;
+    numInactive = 0;
 
     devices.forEach(device => {
       const position = parseInt(device.task); // 5 is the "sleeping" position
       if (position === 0) {
         numReserves += 1;
         newReserves[numReserves] = device;
+      } else if (position === 5) {
+        numInactive += 1;
+        newInactive[numInactive] = device;
       } else {
         newPositions[position] = device;
       }
@@ -44,6 +64,7 @@ const TrackBox: React.FC<TrackBoxProps> = ({ className, onCellClick, devices }) 
 
     setRobotPositions(newPositions);
     setReservePositions(newReserves);
+    setInactivePositions(newInactive);
   }, [devices]);
 
   const containerStyle: React.CSSProperties = {
@@ -66,6 +87,17 @@ const TrackBox: React.FC<TrackBoxProps> = ({ className, onCellClick, devices }) 
   const reserveGridStyle: React.CSSProperties = {
     display: 'grid',
     gridTemplateColumns: '1fr',
+    gridTemplateRows: '1fr 1fr 1fr 1fr',
+    width: '150px',
+    height: '300px',
+    maxWidth: '100%',
+    border: '1px solid #ccc',
+    borderRadius: '4px'
+  };
+
+  const inactiveGridStyle: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
     gridTemplateRows: '1fr 1fr 1fr 1fr',
     width: '150px',
     height: '300px',
@@ -126,6 +158,32 @@ const TrackBox: React.FC<TrackBoxProps> = ({ className, onCellClick, devices }) 
 
   return (
     <div className={`track-box ${className || ''}`} style={containerStyle}>
+      {/* Inactive 4x2 grid */}
+      <div style={inactiveGridStyle}>
+        {[1, 2, 3, 4, 5, 6, 7, 8].map(cellNumber => (
+          <div 
+            key={cellNumber}
+            style={reserveCellStyle} 
+            onClick={() => handleCellClick(cellNumber)}
+          >
+            <span style={reserveNumberStyle}>{cellNumber === 1 ? 'Inactive' : ''}</span>
+            {inactivePositions[cellNumber] && (
+              <div style={{ position: 'absolute' }}>
+                <RobotNode 
+                  node={{
+                    id: inactivePositions[cellNumber]?.id || '',
+                    role: '',
+                    status: 'inactive',
+                    task: '',
+                    missed: 0
+                  }} 
+                />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      
       {/* Main 2x2 grid for positions 1-4 */}
       <div style={gridStyle}>
         {[1, 2, 3, 4].map(cellNumber => (

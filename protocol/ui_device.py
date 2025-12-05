@@ -17,6 +17,7 @@ class UIDevice(ThisDevice):
         self.connected_clients = set()
         self.loop = None
         self.is_ui_device = True  # overwrite
+        self.leader_id = 0
         # Start WebSocket server in a separate thread
         self.ws_thread = threading.Thread(target=self.start_ws_server)
         self.ws_thread.daemon = True
@@ -175,6 +176,13 @@ class UIDevice(ThisDevice):
         """Format device list for JSON serialization"""
         result = []
         for device_id, device in self.device_list.get_device_list().items():
+            result.append({
+                "id": device_id,
+                "task": device.get_task(),
+                "leader": device.get_leader(),
+                "missed": device.get_missed()
+            })
+        for device_id, device in self.inactive_list.get_device_list().items():
             result.append({
                 "id": device_id,
                 "task": device.get_task(),

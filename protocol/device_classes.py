@@ -107,6 +107,7 @@ class ThisDevice(Device):
         super().__init__(id)
         self.leader: bool = True  # start ThisDevice as leader then change accordingly in setup
         self.device_list: DeviceList = DeviceList()  # default sizing
+        self.inactive_list: DeviceList = DeviceList()
         self.leader_id: int  = None
         self.leader_started_operating: float = None
         self.task_folder_idx: int  = None  # multiple operations can be preloaded
@@ -160,21 +161,22 @@ class ThisDevice(Device):
                 self.active = True
                 # commented out on 5/15
                 # self.send(action = Action.ON.value, payload=0, leader_id=0, follower_id=self.id)
-                self.make_follower()
+                self.setup()
                 return False  # wait for next cycle, prevents interpreting injection as device
             # if a new leader is recognized, move into tiebreak scenario
-            if self.received and self.leader_id and self.received_leader_id() != self.leader_id:  # another follower out there
-                if self.received_action() != Action.NEW_LEADER:
-                    print(self.received_leader_id(), self.leader_id)
-                    self.handle_tiebreaker(self.received_leader_id())
-                    return False
-                else:
-                    self.device_list.remove_device(id=self.leader_id)
-                    self.leader_id = self.received_leader_id()
-                    self.device_list.find_device(self.leader_id).make_leader()
-            if self.received and (action_value == -1 or self.received_action() == action_value):
-                #self.log_message(self.received, 'RCVD')
-                return True
+            if self.active:
+                if self.received and self.leader_id and self.received_leader_id() != self.leader_id:  # another follower out there
+                    if self.received_action() != Action.NEW_LEADER:
+                        print(self.received_leader_id(), self.leader_id)
+                        self.handle_tiebreaker(self.received_leader_id())
+                        return False
+                    else:
+                        self.device_list.remove_device(id=self.leader_id)
+                        self.leader_id = self.received_leader_id()
+                        self.device_list.find_device(self.leader_id).make_leader()
+                if self.received and (action_value == -1 or self.received_action() == action_value):
+                    #self.log_message(self.received, 'RCVD')
+                    return True
         return False
 
     def received_action(self) -> int:
@@ -273,7 +275,7 @@ class ThisDevice(Device):
             reserves = self.device_list.get_reserves()
             available_tasks = self.device_list.unused_tasks()
             if len(reserves) != 0 and len(available_tasks) != 0:
-                self.device_list.update_task(reserves[0].id, available_tasks[0])
+                self.device_list.update_task(reserves[0].id, available_tasks[0], self.id)
             print("Leader sending D_LIST", id, device.task)
             self.send(action=Action.D_LIST.value, payload=device.task, leader_id=self.id, follower_id=id, duration=D_LIST_DURATION)
 
@@ -348,7 +350,6 @@ class ThisDevice(Device):
         Called after follower has received check-in message. Responds with same message.
         """
         print("Follower responding to check-in")
-        print(self.robot_process.communicate())
         #self.log_status("RESPONDING TO CHECKIN")
         self.send(action=Action.CHECK_IN_RESPONSE.value, payload=0, leader_id=self.leader_id, follower_id=self.id, duration=2)
         # sending and receiving is along different channels for Transceiver, so this should not be a problem
@@ -368,18 +369,29 @@ class ThisDevice(Device):
         if self.received_follower_id() not in self.device_list.get_device_list().keys():
             #self.log_status("ADDING " + str(self.received_follower_id()) + " TO DLIST")
             is_leader = self.received_follower_id() == self.received_leader_id()
-            self.device_list.add_device(id=self.received_follower_id(), task=self.received_payload(), thisDeviceId= self.id, leader=is_leader)
+            if self.received_payload() != 5:
+                if self.is_ui_device and (self.received_follower_id() in self.inactive_list.get_device_list().keys()):
+                    self.inactive_list.remove_device(self.received_follower_id())
+                self.device_list.add_device(id=self.received_follower_id(), task=self.received_payload(), thisDeviceId= self.id, leader=is_leader)          
+            elif self.is_ui_device:
+                self.inactive_list.add_device(id=self.received_follower_id(), task=self.received_payload(), thisDeviceId= self.id, leader=is_leader)
         elif self.received_payload() != self.device_list.find_device(self.received_follower_id()).get_task():
-            self.device_list.update_task(self.received_follower_id(), self.received_payload())
+            self.device_list.update_task(self.received_follower_id(), self.received_payload(), self.id)
         # handle the rest of the list
         while self.receive(duration=0.5, action_value=Action.D_LIST.value):  # while still receiving D_LIST
             # only add new devices
             if self.received_follower_id() not in self.device_list.get_device_list().keys():
                 #self.log_status("ADDING " + str(self.received_follower_id()) + " TO DLIST")
                 is_leader = self.received_follower_id() == self.received_leader_id()
-                self.device_list.add_device(id=self.received_follower_id(), task=self.received_payload(), thisDeviceId= self.id, leader=is_leader)
+                if self.received_payload() != 5:
+                    if self.is_ui_device and (self.received_follower_id() in self.inactive_list.get_device_list().keys()):
+                        self.inactive_list.remove_device(self.received_follower_id())
+                    self.device_list.add_device(id=self.received_follower_id(), task=self.received_payload(), thisDeviceId= self.id, leader=is_leader)          
+                elif self.is_ui_device:
+                    self.inactive_list.add_device(id=self.received_follower_id(), task=self.received_payload(), thisDeviceId= self.id, leader=is_leader)
+            
             elif self.received_payload() != self.device_list.find_device(self.received_follower_id()).get_task():
-                self.device_list.update_task(self.received_follower_id(), self.received_payload())
+                self.device_list.update_task(self.received_follower_id(), self.received_payload(), self.id)
         # print(f"Current Device List: {self.device_list}")
 
     def follower_drop_disconnected(self):
@@ -447,14 +459,21 @@ class ThisDevice(Device):
             self.csvWriter = csv.writer(self.file, dialect='excel')
             
             print("Starting main on device " + str(self.id))
-            self.setup()
 
-            if self.get_leader():
-                print("--------Leader---------")
-                #self.log_status("BECAME LEADER")
+            if self.active or self.is_ui_device:
+                self.setup()
+
+                if self.get_leader():
+                    print("--------Leader---------")
+                    #self.log_status("BECAME LEADER")
+                else:
+                    print("--------Follower, listening--------")
+                    #self.log_status("BECAME FOLLOWER")
             else:
-                print("--------Follower, listening--------")
-                #self.log_status("BECAME FOLLOWER")
+                self.send(Action.D_LIST.value, 5, 0, self.id, duration=DELETE_DURATION)
+                time.sleep(2)
+                self.send(Action.D_LIST.value, 5, 0, self.id, duration=DELETE_DURATION)
+
             while True:
                 # global looping
                 while self.active:
@@ -487,6 +506,16 @@ class ThisDevice(Device):
 
                         time.sleep(1)
 
+                        if self.device_list.robot_process != None and self.device_list.robot_process.poll() != None:
+                            out = self.device_list.robot_process.communicate()[0]
+                            sheep = 0
+                            if out == str(True):
+                                sheep = 1
+                            
+                            print(sheep)
+                            self.send(Action.INFORMATION.value, sheep, self.leader_id, self.id, DELETE_DURATION)
+                        else:
+                            print('skip')
                         #self.transceiver.clear()
 
                     if not self.get_leader():
@@ -501,6 +530,8 @@ class ThisDevice(Device):
                             print(new_leader_id)
                             if new_leader_id != None:
                                 self.device_list.find_device(new_leader_id).leader = True
+                            else:
+                                new_leader_id = 0
                             if not self.is_ui_device and new_leader_id == self.id:
                                 self.make_leader()
                                 print("Leader sending NEW_LEADER message")
@@ -555,10 +586,11 @@ class ThisDevice(Device):
                         # running on robots w/ Python < 3.10
                         if action == Action.ATTENDANCE.value:
                             # prevents deadlock between leader-follower first attendance state
-                            if self.is_ui_device and self.leader_id == None:
+                            if self.is_ui_device and self.leader_id == 0:
                                 self.follower_handle_attendance()
+                                print(self.leader_id)
                                 self.numHeardDLIST = 0
-                            if self.numHeardDLIST > 1 and self.device_list.find_device(self.id) is None:  # O(1) operation, quick
+                            elif not self.is_ui_device and self.numHeardDLIST > 1 and self.device_list.find_device(self.id) is None:  # O(1) operation, quick
                                 self.follower_handle_attendance()
                                 self.numHeardDLIST = 0
                         elif action == Action.CHECK_IN.value:
@@ -585,8 +617,9 @@ class ThisDevice(Device):
                     time.sleep(2)  # can slow down clock speed here
                     
                     # check if subprocess is running and if so, then kill it / use bool --> set MainThread subprocess as a static variable
-                    self.device_list.robot_process.kill()
-                    subprocess.Popen(["python3", "/home/pi/Desktop/leader_follower/RobotBase/tests/StopMotors.py"])
+                    if self.task != 0:
+                        self.device_list.robot_process.kill()
+                        subprocess.Popen(["python3", "/home/pi/Desktop/leader_follower/RobotBase/tests/StopMotors.py"])
 
                     # TODO: more formal dynamic clock
                 
@@ -603,6 +636,7 @@ class DeviceList:
         """
         self.devices = {}  # hashmap of id: Device object
         self.task_options = dict({1 : None, 2 : None, 3 : None, 4 : None})
+        self.robot_process = None
 
     def __str__(self):
         """
@@ -659,7 +693,7 @@ class DeviceList:
             self.task_options[task] = device
             # call to MainThread.py
             if (id == thisDeviceId):
-                self.robot_process = subprocess.Popen(["python3", "/home/pi/Desktop/leader_follower/RobotBase/MainThread.py", str(task)])
+                self.robot_process = subprocess.Popen(["python3", "/home/pi/Desktop/leader_follower/RobotBase/MainThread.py", str(task)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         device = Device(id)
         if leader:
             device.leader = True
@@ -712,7 +746,7 @@ class DeviceList:
                 reserves.append(d)
         return reserves
 
-    def update_task(self, id: int, task: int):
+    def update_task(self, id: int, task: int, thisDeviceId):
         """
         Reassigns task to target device.
         :param id: identifier for target device.
@@ -722,6 +756,9 @@ class DeviceList:
             if 1 <= task <= 4:
                 self.task_options[task] = self.devices[id]
             self.devices[id].set_task(task)
+            if (id == thisDeviceId):
+                self.robot_process = subprocess.Popen(["python3", "/home/pi/Desktop/leader_follower/RobotBase/MainThread.py", str(task)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
 
     def get_highest_id(self) -> int:
         """

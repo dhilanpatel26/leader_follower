@@ -18,7 +18,7 @@ parent_dir = os.path.abspath(os.path.join(current_dir, os.pardir))
 sys.path.append(parent_dir)
 
 if sys.version_info.major == 2:
-    # print('Please run this program with python3!')
+    #print('Please run this program with python3!')
     sys.exit(0)
 
 class MainThread:
@@ -145,19 +145,21 @@ class MainThread:
             self.turn_left()
             time.sleep(0.2)
         
-        print(f"Navigated to Quadrant {quad_num}")
+        #print(f"Navigated to Quadrant {quad_num}")
         self.move_straight(10)
         time.sleep(0.2)
-        # ADD SHEEP DETECTION
-        time.sleep(10)
-        sheep = True
 
+        # ADD SHEEP DETECTION
+        time.sleep(1)
+        sheep = True
+        '''
         if quad_num == 1:
             self.turn_left()
         else:
             self.turn_right()
-
-        return True
+        '''
+        sys.stdout.write(str(sheep))
+        sys.stdout.flush()
 
     def lf_stop(self, num, reverse, fixed=0):
         self.line_follower.start()
@@ -169,20 +171,7 @@ class MainThread:
             break
 
         self.car.set_velocity(0,0,0)
-        print("Completed Line Following")
-        time.sleep(2)
-    
-    def lf_turn_right(self):
-        self.line_follower.start()
-
-        while True:
-            sensor_data = self.line_follower.line.readData()
-            self.line_follower.turn_right() # this stops running when all chanels are triggered
-            time.sleep(0.05)  
-            break
-
-        self.car.set_velocity(0,0,0)
-        print("Completed Line Following")
+        #print("Completed Line Following")
         time.sleep(2)
         
     def lf_turn_left(self):
@@ -195,7 +184,7 @@ class MainThread:
             break
 
         self.car.set_velocity(0,0,0)
-        print("Completed Line Following")
+        #print("Completed Line Following")
         time.sleep(2)
 
     def nav_home(self, quad_num):
@@ -271,7 +260,7 @@ class MainThread:
 
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             tags = self.detector.detect(gray)
-
+            
             for detected_tag in tags:
                 if detected_tag.tag_id == tag:
                     # calculates misalignment (offset) from center
@@ -284,7 +273,7 @@ class MainThread:
                     if abs(offset) > 40:  # tolerance threshold
                         if offset > 0:
                             self.car.set_velocity(0, 90, 0.30)
-                            print("Offset: " + str(offset))
+                            #print("Offset: " + str(offset))
                             time.sleep(0.1)
                         else:
                             self.car.set_velocity(0, 90, -0.30)
@@ -292,13 +281,13 @@ class MainThread:
 
                         # Stop for 0.5 seconds for recalibration
                         self.car.set_velocity(0, 90, 0)
-                        print("Waiting for re-calibration")
+                        #print("Waiting for re-calibration")
                         time.sleep(0.5)
                     else:
                         aligned = True
                         self.car.set_velocity(0, 90, 0)
                         time.sleep(0.2)
-                        print("Completed Tag Alignment!")
+                        #print("Completed Tag Alignment!")
                         break
         return aligned
 
@@ -310,7 +299,7 @@ class MainThread:
             try:
                 self.quadrant_init(self.quadrant_num)
                 while self.running:
-                    print("task")
+                    #print("task")
                     time.sleep(5)
                     '''
                     for map in range(len(self.mapSelection)):
@@ -391,8 +380,6 @@ class MainThread:
                     self.camera.camera_close()
                 cv2.destroyAllWindows()
 
-if __name__ == '__main__':
-    quadrant_num = int(sys.argv[1])
+quadrant_num = int(sys.argv[1])
 
-    main = MainThread(quadrant_num)
-    print(main.sheep)
+main = MainThread(quadrant_num)

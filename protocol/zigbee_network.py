@@ -29,10 +29,11 @@ class ZigbeeNode():
             'received': self.thisDevice.received,
             'missed': self.thisDevice.missed,
             'task': self.thisDevice.task,
-            'active': True
+            'active': False
         }
         
-        
+        if not self.thisDevice.is_ui_device:
+            self.thisDevice.active = False
         self.thisDevice.device_main()
 
 class ZigbeeUINode(ZigbeeNode):
