@@ -5,7 +5,7 @@ import cv2
 import time
 import threading
 import numpy as np
-from CameraCalibration.CalibrationConfig import *
+from RobotBase.TurboPi.CameraCalibration.CalibrationConfig import *
 
 # 调用USB摄像头/Call USB camera
 
