@@ -663,7 +663,7 @@ class DeviceList:
             self.task_options[task] = device
             # call to MainThread.py
             if (id == thisDeviceId):
-                self.robot_process = subprocess.Popen(["python3", "/home/pi/Desktop/leader_follower/RobotBase/MainThread.py", str(task)], stdout=subprocess.PIPE, text=True)
+                self.robot_process = subprocess.Popen(["python3", "/home/pi/Desktop/leader_follower/RobotBase/MainThread.py", str(task)])
         device = Device(id)
         if leader:
             device.leader = True
