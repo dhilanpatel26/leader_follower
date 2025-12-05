@@ -146,7 +146,7 @@ class MainThread:
             time.sleep(0.2)
         
         print(f"Navigated to Quadrant {quad_num}")
-        self.move_straight(3)
+        self.move_straight(10)
         time.sleep(0.2)
         # ADD SHEEP DETECTION
         time.sleep(10)
