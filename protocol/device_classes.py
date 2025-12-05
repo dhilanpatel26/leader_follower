@@ -489,7 +489,7 @@ class ThisDevice(Device):
 
                         if self.task != 0:
                             try:
-                                sheep, err = self.device_list.robot_process.communicate(timeout=1)
+                                sheep = self.device_list.robot_process.poll()
                                 print(sheep)
                                 self.device_list.robot_process.kill()
                                 self.send(Action.INFORMATION, 1, self.leader_id, self.id, duration=DELETE_DURATION)
