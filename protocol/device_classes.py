@@ -487,14 +487,6 @@ class ThisDevice(Device):
 
                         time.sleep(1)
 
-                        if self.task != 0:
-                            try:
-                                sheep = self.device_list.robot_process.poll()
-                                print(sheep)
-                                self.device_list.robot_process.kill()
-                                self.send(Action.INFORMATION, 1, self.leader_id, self.id, duration=DELETE_DURATION)
-                            except subprocess.TimeoutExpired:
-                                continue
                         #self.transceiver.clear()
 
                     if not self.get_leader():
@@ -667,7 +659,7 @@ class DeviceList:
             self.task_options[task] = device
             # call to MainThread.py
             if (id == thisDeviceId):
-                self.robot_process = subprocess.Popen(["python3", "/home/pi/Desktop/leader_follower/RobotBase/MainThread.py", str(task)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                self.robot_process = subprocess.Popen(["python3", "/home/pi/Desktop/leader_follower/RobotBase/MainThread.py", str(task)])
         device = Device(id)
         if leader:
             device.leader = True
