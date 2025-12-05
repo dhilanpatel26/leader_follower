@@ -487,6 +487,9 @@ class ThisDevice(Device):
 
                         time.sleep(1)
 
+                        if self.task != 0:
+                            if self.device_list.robot_process.poll() != None:
+                                self.send(Action.INFORMATION, 1, self.leader_id, self.id, duration=DELETE_DURATION)
                         #self.transceiver.clear()
 
                     if not self.get_leader():

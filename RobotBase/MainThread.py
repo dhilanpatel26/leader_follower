@@ -52,7 +52,9 @@ class MainThread:
 
         # print(f"Initializing with quadrant number: {self.quadrant_num}")
         # self.move_to_quad(self.quadrant_num)
-        self.move_to_quad_lf(self.quadrant_num)
+        sheep = self.move_to_quad_lf(self.quadrant_num)
+
+        return sheep
 
     def __del__(self):
         if self.camera:
@@ -147,7 +149,10 @@ class MainThread:
         
         print(f"Navigated to Quadrant {quad_num}")
         
-        self.run()
+        # ADD SHEEP DETECTION
+        time.sleep(10)
+
+        return True
 
     def lf_stop(self, num, reverse, fixed=0):
         self.line_follower.start()
