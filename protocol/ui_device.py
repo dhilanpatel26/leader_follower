@@ -204,16 +204,17 @@ class UIDevice(ThisDevice):
         Override send to not actually send to the network
         """
         # Only log the message, don't actually send it
-        msg = Message(action, payload, leader_id, follower_id).msg
-        
-        # Broadcast to UI clients instead
-        self.send_update("message_log", {
-            "type": "send",
-            "action": action,
-            "payload": payload,
-            "leader_id": leader_id,
-            "follower_id": follower_id
-        })
+        if action == Action.ACTIVATE or action == Action.DEACTIVATE:
+            msg = Message(action, payload, leader_id, follower_id).msg
+            
+            # Broadcast to UI clients instead
+            self.send_update("message_log", {
+                "type": "send",
+                "action": action,
+                "payload": payload,
+                "leader_id": leader_id,
+                "follower_id": follower_id
+            })
 
     def make_leader(self):
         """Override make_leader to not send any messages"""
