@@ -52,9 +52,7 @@ class MainThread:
 
         # print(f"Initializing with quadrant number: {self.quadrant_num}")
         # self.move_to_quad(self.quadrant_num)
-        sheep = self.move_to_quad_lf(self.quadrant_num)
-
-        return sheep
+        self.sheep = self.move_to_quad_lf(self.quadrant_num)
 
     def __del__(self):
         if self.camera:
@@ -390,4 +388,4 @@ if __name__ == '__main__':
     quadrant_num = int(sys.argv[1])
 
     main = MainThread(quadrant_num)
-    main.run()
+    print(main.sheep)
