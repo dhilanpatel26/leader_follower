@@ -152,7 +152,7 @@ class MainThread:
         time.sleep(10)
         sheep = True
 
-        if sheep:
+        if quad_num == 1:
             self.turn_left()
         else:
             self.turn_right()
