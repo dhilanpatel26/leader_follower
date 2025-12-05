@@ -152,12 +152,12 @@ class MainThread:
         # ADD SHEEP DETECTION
         time.sleep(1)
         sheep = True
-        '''
+        
         if quad_num == 1:
             self.turn_left()
         else:
             self.turn_right()
-        '''
+        
         sys.stdout.write(str(sheep))
         sys.stdout.flush()
 
@@ -214,12 +214,12 @@ class MainThread:
 
     def turn_right(self):
         self.car.set_velocity(0, 90, 0.85) 
-        time.sleep(0.61) # rpi1: 0.55; 11/20: 0.58
+        time.sleep(0.55) # rpi1: 0.55; 11/20: 0.58
         self.car.set_velocity(0, 90, 0)
 
     def turn_left(self):
         self.car.set_velocity(0, 90, -0.85)  
-        time.sleep(0.61) # rpi1: 0.55; 11/20: 0.61
+        time.sleep(0.55) # rpi1: 0.55; 11/20: 0.61
         self.car.set_velocity(0, 90, 0)  
 
     def handle_last_tag(self):
