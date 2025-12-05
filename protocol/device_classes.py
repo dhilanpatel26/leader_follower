@@ -489,6 +489,7 @@ class ThisDevice(Device):
 
                         if self.task != 0:
                             if self.device_list.robot_process.poll() != None:
+                                print(self.device_list.robot_process.poll())
                                 self.send(Action.INFORMATION, 1, self.leader_id, self.id, duration=DELETE_DURATION)
                         #self.transceiver.clear()
 
