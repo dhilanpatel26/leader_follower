@@ -153,11 +153,63 @@ class MainThread:
         # ADD SHEEP DETECTION
         self.find_sheep(quad_num)
 
-    def find_sheep(quad_num):
-        for i in range(4):
-            time.sleep(1)
-            print(i, 'task')
-        print("done")
+    def find_sheep(self, quad_num):
+        if quad_num < 3:
+            # pause
+            time.sleep(5)
+            # turn right
+            self.turn_right()
+            time.sleep(0.2)
+            # move to next line
+            self.lf_stop(1, False)
+            time.sleep(0.2)
+            # turn left
+            self.turn_left()
+            time.sleep(0.2)
+            # pause
+            time.sleep(5)
+            # turn right
+            self.turn_right()
+            time.sleep(0.2)
+            # move to next line
+            self.lf_stop(1, False)
+            time.sleep(0.2)
+            # turn left
+            self.turn_left()
+            time.sleep(0.2)
+            # pause
+            time.sleep(5)
+            # turn right
+            self.turn_right()
+            time.sleep(0.2)
+        else:
+            # pause
+            time.sleep(5)
+            # turn left
+            self.turn_left()
+            time.sleep(0.2)
+            # move to next line
+            self.lf_stop(1, False)
+            time.sleep(0.2)
+            # turn right
+            self.turn_right()
+            time.sleep(0.2)
+            # pause
+            time.sleep(5)
+            # turn left
+            self.turn_left()
+            time.sleep(0.2)
+            # move to next line
+            self.lf_stop(1, False)
+            time.sleep(0.2)
+            # turn right
+            self.turn_right()
+            time.sleep(0.2)
+            # pause
+            time.sleep(5)
+            # turn left
+            self.turn_left()
+            time.sleep(0.2)
 
         return
 

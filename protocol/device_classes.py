@@ -516,7 +516,7 @@ class ThisDevice(Device):
                                 sheep = 0
                             elif t == 4:
                                 sheep = 1
-                            self.send(Action.INFORMATION.value, sheep, self.leader_id, self.id, DELETE_DURATION)
+                            self.send(Action.INFORMATION.value, sheep, self.leader_id, t, DELETE_DURATION)
                             self.device_list.robot_process = None
                         else:
                             print('skip')
@@ -624,7 +624,7 @@ class ThisDevice(Device):
                                 sheep = 0
                             elif t == 4:
                                 sheep = 1
-                            self.send(Action.INFORMATION.value, sheep, self.leader_id, self.id, DELETE_DURATION)
+                            self.send(Action.INFORMATION.value, sheep, self.leader_id, t, DELETE_DURATION)
                             self.device_list.robot_process = None
                         else:
                             print('skip')
