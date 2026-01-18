@@ -612,7 +612,20 @@ class ThisDevice(Device):
                             print("Device:", self.id, self.leader, "\n", self.device_list)
                         elif action == Action.TASK_START.value:
                             pass
-
+                        
+                        if self.device_list.robot_process != None and self.device_list.robot_process.poll() != None:
+                            t = self.get_task()
+                            if t == 1:
+                                sheep = 1
+                            elif t == 2:
+                                sheep = 2
+                            elif t == 3:
+                                sheep = 0
+                            elif t == 4:
+                                sheep = 1
+                            self.send(Action.INFORMATION.value, sheep, self.leader_id, self.id, DELETE_DURATION)
+                        else:
+                            print('skip')
                             # probably do not need to clear follower channel
                             # self.transceiver.clear()
                 while not self.active:
