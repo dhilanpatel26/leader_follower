@@ -147,8 +147,6 @@ class MainThread:
             time.sleep(0.2)
         
         #print(f"Navigated to Quadrant {quad_num}")
-        self.move_straight(10)
-        time.sleep(0.2)
 
         # ADD SHEEP DETECTION
         self.find_sheep(quad_num)
@@ -156,14 +154,19 @@ class MainThread:
     def find_sheep(self, quad_num):
         if quad_num < 3:
             # pause
+            self.lf_stop(1, False)
             time.sleep(5)
             # turn right
+            self.lf_stop(1, False, 0.25)
+            time.sleep(0.2)
             self.turn_right()
             time.sleep(0.2)
             # move to next line
             self.lf_stop(1, False)
             time.sleep(0.2)
             # turn left
+            self.lf_stop(1, False, 0.25)
+            time.sleep(0.2)
             self.turn_left()
             time.sleep(0.2)
             # pause
@@ -175,6 +178,8 @@ class MainThread:
             self.lf_stop(1, False)
             time.sleep(0.2)
             # turn left
+            self.lf_stop(1, False, 0.25)
+            time.sleep(0.2)
             self.turn_left()
             time.sleep(0.2)
             # pause
@@ -184,14 +189,19 @@ class MainThread:
             time.sleep(0.2)
         else:
             # pause
+            self.lf_stop(1, False)
             time.sleep(5)
             # turn left
+            self.lf_stop(1, False, 0.25)
+            time.sleep(0.2)
             self.turn_left()
             time.sleep(0.2)
             # move to next line
             self.lf_stop(1, False)
             time.sleep(0.2)
             # turn right
+            self.lf_stop(1, False, 0.25)
+            time.sleep(0.2)
             self.turn_right()
             time.sleep(0.2)
             # pause
@@ -203,6 +213,8 @@ class MainThread:
             self.lf_stop(1, False)
             time.sleep(0.2)
             # turn right
+            self.lf_stop(1, False, 0.25)
+            time.sleep(0.2)
             self.turn_right()
             time.sleep(0.2)
             # pause
@@ -265,12 +277,12 @@ class MainThread:
         self.car.set_velocity(0, 90, 0) 
 
     def turn_right(self):
-        self.car.set_velocity(0, 90, 0.85) 
+        self.car.set_velocity(0, 90, 0.8) 
         time.sleep(0.55) # rpi1: 0.55; 11/20: 0.58
         self.car.set_velocity(0, 90, 0)
 
     def turn_left(self):
-        self.car.set_velocity(0, 90, -0.85)  
+        self.car.set_velocity(0, 90, -0.8)  
         time.sleep(0.55) # rpi1: 0.55; 11/20: 0.61
         self.car.set_velocity(0, 90, 0)  
 
