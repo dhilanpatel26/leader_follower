@@ -509,9 +509,9 @@ class ThisDevice(Device):
                         if self.device_list.robot_process != None and self.device_list.robot_process.poll() != None:
                             t = self.get_task() + 1
                             if t == 1:
-                                sheep = 1
+                                sheep = 3
                             elif t == 2:
-                                sheep = 2
+                                sheep = 1
                             elif t == 3:
                                 sheep = 0
                             elif t == 4:
