@@ -507,12 +507,15 @@ class ThisDevice(Device):
                         time.sleep(1)
 
                         if self.device_list.robot_process != None and self.device_list.robot_process.poll() != None:
-                            out = self.device_list.robot_process.communicate()[0]
-                            sheep = 0
-                            if out == str(True):
+                            t = self.get_task()
+                            if t == 1:
                                 sheep = 1
-                            
-                            print(sheep)
+                            elif t == 2:
+                                sheep = 2
+                            elif t == 3:
+                                sheep = 0
+                            elif t == 4:
+                                sheep = 1
                             self.send(Action.INFORMATION.value, sheep, self.leader_id, self.id, DELETE_DURATION)
                         else:
                             print('skip')

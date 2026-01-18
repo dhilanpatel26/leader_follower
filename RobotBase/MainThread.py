@@ -53,6 +53,7 @@ class MainThread:
         # print(f"Initializing with quadrant number: {self.quadrant_num}")
         # self.move_to_quad(self.quadrant_num)
         self.sheep = self.move_to_quad_lf(self.quadrant_num)
+        return
 
     def __del__(self):
         if self.camera:
@@ -150,16 +151,15 @@ class MainThread:
         time.sleep(0.2)
 
         # ADD SHEEP DETECTION
-        time.sleep(1)
-        sheep = True
-        
-        if quad_num == 1:
-            self.turn_left()
-        else:
-            self.turn_right()
-        
-        sys.stdout.write(str(sheep))
-        sys.stdout.flush()
+        self.find_sheep(quad_num)
+
+    def find_sheep(quad_num):
+        for i in range(4):
+            time.sleep(1)
+            print(i, 'task')
+        print("done")
+
+        return
 
     def lf_stop(self, num, reverse, fixed=0):
         self.line_follower.start()
