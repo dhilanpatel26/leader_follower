@@ -507,7 +507,7 @@ class ThisDevice(Device):
                         time.sleep(1)
 
                         if self.device_list.robot_process != None and self.device_list.robot_process.poll() != None:
-                            t = self.get_task()
+                            t = self.get_task() + 1
                             if t == 1:
                                 sheep = 1
                             elif t == 2:
@@ -517,6 +517,7 @@ class ThisDevice(Device):
                             elif t == 4:
                                 sheep = 1
                             self.send(Action.INFORMATION.value, sheep, self.leader_id, self.id, DELETE_DURATION)
+                            self.device_list.robot_process = None
                         else:
                             print('skip')
                         #self.transceiver.clear()
@@ -614,7 +615,7 @@ class ThisDevice(Device):
                             pass
                         
                         if self.device_list.robot_process != None and self.device_list.robot_process.poll() != None:
-                            t = self.get_task()
+                            t = self.get_task() + 1
                             if t == 1:
                                 sheep = 1
                             elif t == 2:
@@ -624,6 +625,7 @@ class ThisDevice(Device):
                             elif t == 4:
                                 sheep = 1
                             self.send(Action.INFORMATION.value, sheep, self.leader_id, self.id, DELETE_DURATION)
+                            self.device_list.robot_process = None
                         else:
                             print('skip')
                             # probably do not need to clear follower channel
