@@ -507,7 +507,7 @@ class ThisDevice(Device):
                         time.sleep(1)
 
                         if self.device_list.robot_process != None and self.device_list.robot_process.poll() != None:
-                            t = self.get_task() + 1
+                            t = self.device_list.find_device(self.id).get_task() + 1
                             if t == 1:
                                 sheep = 3
                             elif t == 2:
@@ -615,7 +615,7 @@ class ThisDevice(Device):
                             pass
                         
                         if self.device_list.robot_process != None and self.device_list.robot_process.poll() != None:
-                            t = self.get_task() + 1
+                            t = self.device_list.find_device(self.id).get_task() + 1
                             if t == 1:
                                 sheep = 3
                             elif t == 2:
