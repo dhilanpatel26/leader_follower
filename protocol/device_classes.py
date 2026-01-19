@@ -10,7 +10,7 @@ CURRENT_FILE = Path(__file__).absolute()
 PROTOCOL_DIR = CURRENT_FILE.parent
 OUTPUT_DIR = PROTOCOL_DIR / "output"
 
-MISSED_THRESHOLD: int = 1
+MISSED_THRESHOLD: int = 0
 RESPONSE_ALLOWANCE: float = 1  # subject to change
 PRECISION_ALLOWANCE: int = 1
 SETUP_WAIT = 5
@@ -507,7 +507,7 @@ class ThisDevice(Device):
                         time.sleep(1)
 
                         if self.device_list.robot_process != None and self.device_list.robot_process.poll() != None:
-                            t = self.device_list.find_device(self.id).get_task() + 1
+                            t = self.device_list.find_device(self.id).get_task()
                             if t == 1:
                                 sheep = 3
                             elif t == 2:
@@ -615,7 +615,7 @@ class ThisDevice(Device):
                             pass
                         
                         if self.device_list.robot_process != None and self.device_list.robot_process.poll() != None:
-                            t = self.device_list.find_device(self.id).get_task() + 1
+                            t = self.device_list.find_device(self.id).get_task()
                             if t == 1:
                                 sheep = 3
                             elif t == 2:
