@@ -149,7 +149,7 @@ class MainThread:
         #print(f"Navigated to Quadrant {quad_num}")
 
         # ADD SHEEP DETECTION
-        self.find_sheep(quad_num)
+        #self.find_sheep(quad_num)
 
     def find_sheep(self, quad_num):
         if quad_num < 3:

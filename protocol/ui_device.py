@@ -180,7 +180,8 @@ class UIDevice(ThisDevice):
                 "id": device_id,
                 "task": device.get_task(),
                 "leader": device.get_leader(),
-                "missed": device.get_missed()
+                "missed": device.get_missed(),
+                "taskstatus": device.get_task_status()
             })
         for device_id, device in self.inactive_list.get_device_list().items():
             result.append({

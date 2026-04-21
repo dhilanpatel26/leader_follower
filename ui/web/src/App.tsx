@@ -21,7 +21,7 @@ function App() {
       <main className="flex-grow container mx-auto p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <DeviceStatus device={device} />
+            <DeviceStatus messages={messages} />
             <DeviceList devices={devices} />
           </div>
           
